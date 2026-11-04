@@ -20,7 +20,7 @@ use crate::supervise::{Exit, SAFE_PATH, Spec, Supervised, read_log_tail};
 /// The control fixture: a D3D11 program that clears every frame to a known
 /// colour. Built from `fixtures/src/fixture.cpp`, see `fixtures/README.md`.
 pub const CONTROL_EXE: &[u8] = include_bytes!("../../../fixtures/bin/fx_render_ok.exe");
-const CONTROL_SECS: u64 = 8;
+const CONTROL_SECS: u64 = 12;
 const CONTROL_CAPTURE_AT: f64 = 5.0;
 const LOG_LIMIT: u64 = 2 * 1024 * 1024;
 const STOP_GRACE: Duration = Duration::from_secs(5);
@@ -164,30 +164,40 @@ impl ProtonBackend<'_> {
         let mut proc = Supervised::spawn(&spec)?;
         let shot = run_dir.join("control.png");
         let mut verified = false;
-        let mut captured = false;
+        let mut attempts = 0u32;
+        let mut next_attempt = Duration::ZERO;
         let deadline = Duration::from_secs(CONTROL_SECS + 90);
         while proc.elapsed() < deadline {
             if proc.try_exit()?.is_some() {
                 break;
             }
             // Prefix creation takes several seconds before the fixture
-            // starts its own clock, so capture once its window exists.
-            if !captured && proc.elapsed().as_secs_f64() >= CONTROL_CAPTURE_AT {
+            // starts its own clock. Once its window exists, capture every
+            // second until the colour appears: on a cold start DXVK's first
+            // frame can arrive seconds after the window does.
+            if !verified
+                && proc.elapsed().as_secs_f64() >= CONTROL_CAPTURE_AT
+                && proc.elapsed() >= next_attempt
+            {
                 let wins = capture::windows(&self.display.name())
                     .await
                     .unwrap_or_default();
                 if wins.iter().any(|w| w.width >= 640) {
-                    tokio::time::sleep(Duration::from_millis(1500)).await;
                     if let Ok(stats) = capture::screenshot(&self.display.name(), &shot).await {
                         verified = stats.matches_control();
                     }
-                    captured = true;
+                    attempts += 1;
                 }
+                if verified {
+                    break;
+                }
+                next_attempt = proc.elapsed() + Duration::from_secs(1);
             }
             tokio::time::sleep(POLL).await;
         }
         proc.stop(STOP_GRACE).await;
         self.kill_wineserver(&compat).await;
+        tracing::debug!(attempts, verified, "capture control attempts");
         let device = fs::read_to_string(dir.join("result.txt"))
             .ok()
             .and_then(|t| {
