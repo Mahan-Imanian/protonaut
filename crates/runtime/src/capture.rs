@@ -1,6 +1,3 @@
-//! Screenshots and window listings from the virtual display, using the
-//! `import` (ImageMagick) and `xwininfo` (x11-utils) tools.
-
 use std::path::Path;
 use std::time::Duration;
 
@@ -216,6 +213,8 @@ mod tests {
                 "-size",
                 "1280x800",
                 "xc:black",
+                "-font",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
                 "-fill",
                 "white",
                 "-pointsize",
