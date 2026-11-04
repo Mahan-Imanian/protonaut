@@ -14,10 +14,10 @@ be automated on a CI runner, not built yet. *Hardware*: needs a real device.
 
 | Valve criterion | What SteamOS Preflight does | Status | Evidence / gap |
 |---|---|---|---|
-| **Proton: no blocking bugs** (game starts and runs) | SP-RUN-001/002/003: launch, stays up for the observation window, no crash signatures | Verified | Crash, startup failure, missing asset and missing DLL fixtures; OpenTTD 15.3 runs 40 s under two runtimes |
+| **Proton: no blocking bugs** (game starts and runs) | SP-RUN-001/002/003: launch, stays up for the observation window, no crash signatures | Verified | Crash, startup failure, missing asset and missing DLL fixtures; OpenTTD 15.3 and a Godot 4.7.2 game (Vulkan and Direct3D 12 exports) run 40 s under two runtimes ([real-game results](compatibility/real-games.md)) |
 | Proton: middleware it does not support (anti-cheat) | SP-AC-001 flags known anti-cheat files | Heuristic | Detection only; cannot know whether the vendor's Proton support is enabled |
 | Proton: middleware (media codecs) | SP-MEDIA-001 flags formats usually decoded by Media Foundation | Heuristic | Static only; playback is not verified at runtime |
-| **Display: supported resolution (1280x800 or 1280x720)** | Runs at 1280x800; SP-DISP-003 reports a game window smaller than the display (observed) or black bars (heuristic) | Partly verified | Window size verified with OpenTTD (960x600 window reported). Whether the game's own resolution setting defaults correctly is not read |
+| **Display: supported resolution (1280x800 or 1280x720)** | Runs at 1280x800; SP-DISP-003 reports a game window smaller than the display (observed) or black bars (heuristic) | Partly verified | Window size verified with OpenTTD (960x600) and Godot (1152x648). Whether the game's own resolution setting defaults correctly is not read |
 | Display: smallest text ≥ 9 px at 1280x800 | SP-HW-003, always NOT_TESTED | Missing | Needs OCR on the screenshots |
 | **Input: full controller support in the default configuration** | SP-HW-002, always NOT_TESTED | Missing | Needs injected gamepad input and a check that the game reacts |
 | Input: controller glyphs match the device | SP-STEAM-001 reports Steam Input flat-API imports | Heuristic | `UNKNOWN` for interface-based Steam Input and for engines that load it from a plugin. Glyphs on screen are not read |
