@@ -28,8 +28,21 @@ In a GitHub workflow on `ubuntu-24.04`, after your build step:
 Or on your own Ubuntu 24.04 machine, after installing the system packages
 listed in [Run it locally](#run-it-locally):
 
+Install the release binary (built on Ubuntu 22.04, needs glibc 2.35 or
+newer) after checking its checksum and build provenance:
+
 ```bash
-cargo install --locked --git https://github.com/Mahan-Imanian/steamos-preflight steamos-preflight
+curl -fLO https://github.com/Mahan-Imanian/steamos-preflight/releases/download/v0.1.0/steamos-preflight-x86_64-unknown-linux-gnu
+curl -fLO https://github.com/Mahan-Imanian/steamos-preflight/releases/download/v0.1.0/SHA256SUMS
+sha256sum -c --ignore-missing SHA256SUMS
+gh attestation verify steamos-preflight-x86_64-unknown-linux-gnu --repo Mahan-Imanian/steamos-preflight
+sudo install -m 0755 steamos-preflight-x86_64-unknown-linux-gnu /usr/local/bin/steamos-preflight
+```
+
+or build it from source:
+
+```bash
+cargo install --locked --git https://github.com/Mahan-Imanian/steamos-preflight --tag v0.1.0 steamos-preflight
 ```
 
 ```bash
