@@ -1,0 +1,57 @@
+# Example: test a Windows build on every pull request and comment the report.
+name: SteamOS Preflight
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build the Windows game
+        run: ./build-windows.sh # produces dist/Windows/MyGame.exe
+
+      - id: preflight
+        uses: Mahan-Imanian/steamos-preflight@v0.1.0
+        with:
+          fail-job: "false" # keep the outputs; the last step fails the job
+          build: dist/Windows
+          exe: MyGame.exe
+          runtimes: stable
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: preflight-report
+          path: ${{ steps.preflight.outputs.results }}/report.json
+
+      - name: Fail on compatibility failures
+        if: steps.preflight.outputs.verdict != 'pass'
+        run: exit 1
+
+  comment:
+    needs: preflight
+    if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write # update the report comment
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: preflight-report
+      - uses: Mahan-Imanian/steamos-preflight/comment@v0.1.0
+        with:
+          report: report.json
+          pr-number: ${{ github.event.pull_request.number }}

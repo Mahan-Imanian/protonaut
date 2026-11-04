@@ -1,0 +1,123 @@
+{
+  "$defs": {
+    "BuildSection": {
+      "additionalProperties": false,
+      "properties": {
+        "args": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "dir": {
+          "description": "Directory holding the Windows build, relative to the config file.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "exe": {
+          "description": "Executable path relative to `dir`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "ChecksSection": {
+      "additionalProperties": false,
+      "properties": {
+        "skip": {
+          "default": [],
+          "description": "Check ids to leave out of the report, for example `SP-MEDIA-001`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "FailOn": {
+      "description": "What makes the verdict `fail`.",
+      "enum": [
+        "fail",
+        "warning"
+      ],
+      "type": "string"
+    },
+    "RunSection": {
+      "additionalProperties": false,
+      "properties": {
+        "fail_on": {
+          "$ref": "#/$defs/FailOn",
+          "default": "fail"
+        },
+        "observe_secs": {
+          "default": 20,
+          "description": "How long to watch the game after launch, in seconds.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "resolution": {
+          "default": "1280x800",
+          "type": "string"
+        },
+        "runtimes": {
+          "default": [
+            "stable"
+          ],
+          "description": "Runtime ids or aliases, for example `stable` or `ge-proton10-34`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "$id": "https://github.com/Mahan-Imanian/steamos-preflight/blob/main/schemas/config.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The file as written by the user.",
+  "properties": {
+    "build": {
+      "$ref": "#/$defs/BuildSection",
+      "default": {
+        "args": [],
+        "dir": null,
+        "exe": null
+      }
+    },
+    "checks": {
+      "$ref": "#/$defs/ChecksSection",
+      "default": {
+        "skip": []
+      }
+    },
+    "run": {
+      "$ref": "#/$defs/RunSection",
+      "default": {
+        "fail_on": "fail",
+        "observe_secs": 20,
+        "resolution": "1280x800",
+        "runtimes": [
+          "stable"
+        ]
+      }
+    },
+    "schema_version": {
+      "default": 1,
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "title": "SteamOS Preflight configuration",
+  "type": "object"
+}

@@ -1,0 +1,87 @@
+# On a version tag: test, build the Linux binary on the oldest supported
+# Ubuntu (for a low glibc requirement), write checksums, attest build
+# provenance, and create a DRAFT release that a maintainer publishes after
+# checking it.
+name: Release
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+*"]
+
+permissions:
+  contents: read
+
+# Never cancel a release halfway; queue a second tag instead.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build release assets
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write # sign the build provenance with GitHub's OIDC identity
+      attestations: write # store the provenance attestation for the binary
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Tag matches the crate version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version=$(cargo metadata --format-version 1 --no-deps | python3 -c "import json,sys; print(next(p['version'] for p in json.load(sys.stdin)['packages'] if p['name']=='steamos-preflight'))")
+          [[ "$TAG" == "v$version" ]] || { echo "::error::tag $TAG does not match crate version $version"; exit 1; }
+      - name: Test tools
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends imagemagick tesseract-ocr tesseract-ocr-eng fonts-dejavu-core
+      - run: cargo test --locked --workspace
+      - name: Build
+        env:
+          SOURCE_DATE_EPOCH: "0"
+        run: |
+          RUSTFLAGS="--remap-path-prefix=$PWD=. --remap-path-prefix=$HOME=~" cargo build --locked --release
+          mkdir -p dist
+          install -m 0755 target/release/steamos-preflight dist/steamos-preflight-x86_64-unknown-linux-gnu
+          cargo metadata --format-version 1 --locked > dist/cargo-metadata.json
+          (cd dist && sha256sum steamos-preflight-x86_64-unknown-linux-gnu cargo-metadata.json > SHA256SUMS)
+          cat dist/SHA256SUMS
+          dist/steamos-preflight-x86_64-unknown-linux-gnu --version
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/steamos-preflight-x86_64-unknown-linux-gnu
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-dist
+          path: dist
+          retention-days: 7
+
+  draft:
+    name: Create draft release
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write # create the draft GitHub Release and upload its assets
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-dist
+          path: dist
+      - name: Verify checksums and provenance before attaching anything
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          (cd dist && sha256sum -c SHA256SUMS)
+          gh attestation verify dist/steamos-preflight-x86_64-unknown-linux-gnu --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/release.yml" --source-ref "refs/tags/$TAG" --deny-self-hosted-runners
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --draft --verify-tag --prerelease \
+            --title "$TAG" --notes "Draft created by the release workflow; a maintainer adds the release notes and publishes it."

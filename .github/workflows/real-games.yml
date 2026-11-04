@@ -1,0 +1,334 @@
+# Runs real open-source games through the action, as a check that the tool
+# behaves sensibly beyond the synthetic fixtures. Downloads are pinned by
+# SHA-256; the games run only on GitHub-hosted runners, inside the action's
+# sandbox.
+name: Real games
+
+on:
+  pull_request:
+    paths:
+      - "action.yml"
+      - "crates/**"
+      - ".github/workflows/real-games.yml"
+  schedule:
+    - cron: "41 5 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: real-games-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # OpenTTD 15.3 (GPL-2.0) and OpenGFX 8.0 (GPL-2.0) from the official CDN.
+  # SHA-1 values match the publisher's manifest.yaml; OpenTTD's SHA-256 is
+  # also listed there.
+  OPENTTD_URL: https://cdn.openttd.org/openttd-releases/15.3/openttd-15.3-windows-win64.zip
+  OPENTTD_SHA256: 61c0a6a43d81008c7ff4330fb56351bbf66a980cdad041f1d0e08b51f2eeb34c
+  OPENGFX_URL: https://cdn.openttd.org/opengfx-releases/8.0/opengfx-8.0-all.zip
+  OPENGFX_SHA256: 43a0c1dabf39cb865394f3a6cc36d4da5c10ecfaaf55652043104806810903be
+  # Godot 4.7.2 (MIT) and its Windows export templates; SHA-512 values from
+  # the release's SHA512-SUMS.txt. The game is the 3D platformer from the
+  # official godot-demo-projects repository (MIT), pinned to a commit.
+  GODOT_BASE: https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable
+  GODOT_ZIP_SHA512: 9aa00f7a605200940bce3027a567b782f49bd8e940dd06ae9e987bd65aee1b1467edd56ed84fcdcbdd44354bf613bdbb4e5d2913e925850368e150c59ed54c65
+  GODOT_TPZ_SHA512: ca4d71c4d7b81dfc15d1a98baa07534aa95b03fdda78a0075b06672e1648d2e5f40980c9adc28d23e1b92e732ee7bf3461997aa804af74ec2fcd7a93ccb84079
+  DEMOS_COMMIT: b761b4cd5718a7118f2c95eb55f181d0a5f004f1
+  # Chocolate Doom 3.0.1 (GPL-2.0) from chocolate-doom.org; the archive's PGP
+  # signature by Simon Howard (6D2C117E0310664497AA9546F6C2EE9C23354344) was
+  # verified before pinning. Freedoom 0.13.0 (BSD-3-Clause) is unsigned; its
+  # hash is pinned as first downloaded.
+  CHOCOLATE_URL: https://www.chocolate-doom.org/downloads/3.0.1/chocolate-doom-3.0.1-win32.zip
+  CHOCOLATE_SHA256: f038d1db11df5984e9f6a1dd9ff554b7d09554bbc6500c247d7dae67e3dad502
+  FREEDOOM_URL: https://github.com/freedoom/freedoom/releases/download/v0.13.0/freedoom-0.13.0.zip
+  FREEDOOM_SHA256: 3f9b264f3e3ce503b4fb7f6bdcb1f419d93c7b546f4df3e874dd878db9688f59
+
+jobs:
+  openttd:
+    name: OpenTTD 15.3
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download and verify
+        run: |
+          curl -sSfL -o openttd.zip "$OPENTTD_URL"
+          curl -sSfL -o opengfx.zip "$OPENGFX_URL"
+          echo "$OPENTTD_SHA256  openttd.zip" | sha256sum -c -
+          echo "$OPENGFX_SHA256  opengfx.zip" | sha256sum -c -
+      - name: Assemble a complete build and one without base graphics
+        run: |
+          mkdir -p unpack gfx dist
+          unzip -q openttd.zip -d unpack
+          unzip -q opengfx.zip -d gfx
+          game=$(dirname "$(find unpack -maxdepth 2 -name openttd.exe)")
+          cp -r "$game" dist/openttd-nogfx
+          cp -r "$game" dist/openttd
+          cp gfx/*.tar dist/openttd/baseset/
+      - name: Complete build
+        id: full
+        uses: ./
+        with:
+          build: dist/openttd
+          exe: openttd.exe
+          runtimes: ge-proton11-12 ge-proton10-34
+          observe-secs: "40"
+          artifact-name: real-openttd
+          fail-job: "false"
+      - name: Build without base graphics
+        id: nogfx
+        uses: ./
+        with:
+          build: dist/openttd-nogfx
+          exe: openttd.exe
+          runtimes: ge-proton11-12
+          observe-secs: "40"
+          artifact-name: real-openttd-nogfx
+          fail-job: "false"
+      - name: Summarise
+        env:
+          FULL: ${{ steps.full.outputs.results }}
+          NOGFX: ${{ steps.nogfx.outputs.results }}
+        run: |
+          for r in "$FULL" "$NOGFX"; do
+            python3 - "$r/report.json" <<'EOF'
+          import json, sys
+          r = json.load(open(sys.argv[1]))
+          print("==", sys.argv[1], r["summary"])
+          for run in r["runs"]:
+              print("  run", run)
+          for c in r["checks"]:
+              if c["category"] != "hardware":
+                  print(f"  {c['status']:<10} {c['id']:<13} {c.get('runtime') or 'static':<15} {c['summary']}")
+          EOF
+          done
+      - name: Assert what was verified by hand
+        env:
+          FULL: ${{ steps.full.outputs.results }}
+        run: |
+          # Expectations come from reviewing the screenshots of earlier runs:
+          # OpenTTD 15.3 shows its title screen in a 960x600 window.
+          python3 - "$FULL/report.json" <<'EOF'
+          import json, sys
+          r = json.load(open(sys.argv[1]))
+          runs = {run["runtime"]: run for run in r["runs"]}
+          def status(cid, rt=None):
+              return next(c for c in r["checks"] if c["id"] == cid and c.get("runtime") == rt)
+          assert r["summary"]["verdict"] == "pass", r["summary"]
+          assert status("SP-PE-003")["status"] == "PASS"
+          for rt in ("ge-proton11-12", "ge-proton10-34"):
+              assert runs[rt]["outcome"] == "survived", runs[rt]
+              assert status("SP-RUN-003", rt)["status"] == "PASS"
+              assert status("SP-DISP-001", rt)["status"] == "PASS"
+          assert runs["ge-proton11-12"]["capture_verified"] is True
+          assert status("SP-DISP-002", "ge-proton11-12")["status"] == "PASS"
+          fill = status("SP-DISP-003", "ge-proton11-12")
+          assert fill["status"] == "WARNING" and "960x600 window" in fill["summary"], fill
+          print("OpenTTD expectations hold")
+          EOF
+      - name: Missing base graphics is not a clean pass
+        env:
+          NOGFX: ${{ steps.nogfx.outputs.results }}
+        run: |
+          # Regression: OpenTTD without graphics keeps running and shows
+          # "Missing graphics ... none could be found" inside its window.
+          python3 - "$NOGFX/report.json" <<'EOF'
+          import json, sys
+          r = json.load(open(sys.argv[1]))
+          c = next(c for c in r["checks"] if c["id"] == "SP-DISP-005")
+          assert c["status"] == "WARNING", c
+          assert any("could be found" in d for d in c.get("details", [])), c
+          assert r["summary"]["counts"]["warning"] >= 1
+          print("missing graphics reported:", c["details"])
+          EOF
+
+  godot:
+    name: Godot 4.7.2 platformer (${{ matrix.driver }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        driver: [vulkan, d3d12]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/godot-dl
+          key: godot-4.7.2-${{ env.GODOT_TPZ_SHA512 }}
+      - name: Download and verify Godot
+        run: |
+          mkdir -p "$RUNNER_TEMP/godot-dl" && cd "$RUNNER_TEMP/godot-dl"
+          [[ -f godot.zip ]] || curl -sSfL -o godot.zip "$GODOT_BASE/Godot_v4.7.2-stable_linux.x86_64.zip"
+          [[ -f templates.tpz ]] || curl -sSfL -o templates.tpz "$GODOT_BASE/Godot_v4.7.2-stable_export_templates.tpz"
+          echo "$GODOT_ZIP_SHA512  godot.zip" | sha512sum -c -
+          echo "$GODOT_TPZ_SHA512  templates.tpz" | sha512sum -c -
+          unzip -q -o godot.zip -d "$RUNNER_TEMP/godot"
+          mkdir -p ~/.local/share/godot/export_templates
+          unzip -q -o templates.tpz -d "$RUNNER_TEMP/tpl"
+          rm -rf ~/.local/share/godot/export_templates/4.7.2.stable
+          mv "$RUNNER_TEMP/tpl/templates" ~/.local/share/godot/export_templates/4.7.2.stable
+      - name: Fetch the demo at a fixed commit
+        run: |
+          git init -q demos && cd demos
+          git remote add origin https://github.com/godotengine/godot-demo-projects.git
+          git fetch -q --depth 1 --filter=blob:none origin "$DEMOS_COMMIT"
+          git sparse-checkout set 3d/platformer
+          git checkout -q FETCH_HEAD
+      - name: Export for Windows
+        env:
+          DRIVER: ${{ matrix.driver }}
+        run: |
+          cd demos/3d/platformer
+          printf '\n[rendering]\n\nrendering_device/driver.windows="%s"\n' "$DRIVER" >> project.godot
+          # Godot's own log names the driver and device it actually used; it
+          # is written next to the build copy the action runs.
+          printf '\n[debug]\n\nfile_logging/enable_file_logging.pc=true\nfile_logging/log_path="Z:/var/tmp/steamos-preflight/build/godot.log"\n' >> project.godot
+          cat > export_presets.cfg <<'EOF'
+          [preset.0]
+          name="Windows Desktop"
+          platform="Windows Desktop"
+          runnable=true
+          export_filter="all_resources"
+          export_path="Platformer.exe"
+
+          [preset.0.options]
+          binary_format/embed_pck=true
+          binary_format/architecture="x86_64"
+          application/modify_resources=false
+          codesign/enable=false
+          EOF
+          godot="$(ls "$RUNNER_TEMP"/godot/Godot_v4.7.2-stable_linux.x86_64)"
+          "$godot" --headless --path . --import >/dev/null 2>&1 || true
+          mkdir -p "$GITHUB_WORKSPACE/dist/godot"
+          "$godot" --headless --path . --export-release "Windows Desktop" "$GITHUB_WORKSPACE/dist/godot/Platformer.exe"
+          ls -la "$GITHUB_WORKSPACE/dist/godot"
+      - name: Run under the action
+        id: run
+        uses: ./
+        with:
+          build: dist/godot
+          exe: Platformer.exe
+          runtimes: ge-proton11-12 ge-proton10-34
+          observe-secs: "40"
+          artifact-name: real-godot-${{ matrix.driver }}
+          fail-job: "false"
+      - name: Which renderer did Godot use
+        env:
+          DRIVER: ${{ matrix.driver }}
+        run: |
+          # The log of the last runtime run (GE-Proton10-34); each run starts
+          # the game afresh and the file is overwritten.
+          sudo cat /var/tmp/steamos-preflight/build/godot.log | head -n 12 | tee godot-head.txt
+          case "$DRIVER" in
+            vulkan) grep -q "^Vulkan .* Using Device" godot-head.txt ;;
+            d3d12) grep -q "^D3D12 .* Using Device" godot-head.txt ;;
+          esac
+          echo "Godot used the $DRIVER driver"
+      - name: Summarise
+        env:
+          RESULTS: ${{ steps.run.outputs.results }}
+        run: |
+          python3 - "$RESULTS/report.json" <<'EOF'
+          import json, sys
+          r = json.load(open(sys.argv[1]))
+          print("==", r["summary"])
+          for run in r["runs"]:
+              print("  run", run)
+          for c in r["checks"]:
+              if c["category"] != "hardware":
+                  print(f"  {c['status']:<10} {c['id']:<13} {c.get('runtime') or 'static':<15} {c['summary']}")
+                  for d in c.get("details", [])[:5]:
+                      print("        ", d)
+          EOF
+          grep -ahiE "d3d12|vulkan|driver|fallback|error" "$RESULTS"/runs/*/runtime.log | grep -v "^info:" | head -30 || true
+      - name: Assert what was verified by hand
+        env:
+          RESULTS: ${{ steps.run.outputs.results }}
+        run: |
+          # From reviewing earlier runs: the demo renders its 3D level under
+          # GE-Proton11-12 in Godot's default 1152x648 window.
+          python3 - "$RESULTS/report.json" <<'EOF'
+          import json, sys
+          r = json.load(open(sys.argv[1]))
+          runs = {run["runtime"]: run for run in r["runs"]}
+          def status(cid, rt=None):
+              return next(c for c in r["checks"] if c["id"] == cid and c.get("runtime") == rt)
+          assert r["summary"]["verdict"] == "pass", r["summary"]
+          assert status("SP-PE-003")["status"] == "PASS"
+          for rt in ("ge-proton11-12", "ge-proton10-34"):
+              assert runs[rt]["outcome"] == "survived", runs[rt]
+              assert status("SP-RUN-003", rt)["status"] == "PASS"
+          assert runs["ge-proton11-12"]["capture_verified"] is True
+          assert status("SP-DISP-002", "ge-proton11-12")["status"] == "PASS"
+          assert "1152x648 window" in status("SP-DISP-003", "ge-proton11-12")["summary"]
+          print("Godot expectations hold")
+          EOF
+
+  chocolate-doom:
+    name: Chocolate Doom 3.0.1 with Freedoom
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download and verify
+        run: |
+          curl -sSfL -o chocolate.zip "$CHOCOLATE_URL"
+          curl -sSfL -o freedoom.zip "$FREEDOOM_URL"
+          echo "$CHOCOLATE_SHA256  chocolate.zip" | sha256sum -c -
+          echo "$FREEDOOM_SHA256  freedoom.zip" | sha256sum -c -
+      - name: Assemble the game with the Freedoom IWAD
+        run: |
+          mkdir -p dist/doom wads
+          unzip -q chocolate.zip -d dist/doom
+          unzip -q -j freedoom.zip '*/freedoom1.wad' -d wads
+          cp wads/freedoom1.wad dist/doom/
+      - name: Run under the action
+        id: run
+        uses: ./
+        with:
+          build: dist/doom
+          exe: chocolate-doom.exe
+          runtimes: ge-proton11-12 ge-proton10-34
+          observe-secs: "40"
+          artifact-name: real-chocolate-doom
+          fail-job: "false"
+      - name: Check the reviewed results
+        env:
+          RESULTS: ${{ steps.run.outputs.results }}
+        run: |
+          # Expectations come from reviewing the screenshots of earlier runs:
+          # under GE-Proton11-12 the Freedoom demo plays full screen, 4:3 with
+          # side bars. Without i386 host libraries the 32-bit game exited
+          # with code 255 before opening a window (regression). Under
+          # GE-Proton10-34 it crashes with an access violation after about
+          # 1 s; the cause is not identified.
+          python3 - "$RESULTS/report.json" <<'EOF'
+          import json, sys
+          r = json.load(open(sys.argv[1]))
+          runs = {run["runtime"]: run for run in r["runs"]}
+          def status(cid, rt=None):
+              return next(c for c in r["checks"] if c["id"] == cid and c.get("runtime") == rt)
+          assert status("SP-PE-002")["status"] == "PASS"
+          new = "ge-proton11-12"
+          assert runs[new]["outcome"] == "survived", runs[new]
+          assert runs[new]["capture_verified"] is True
+          for cid in ("SP-RUN-002", "SP-RUN-003", "SP-DISP-001", "SP-DISP-002", "SP-DISP-004"):
+              assert status(cid, new)["status"] == "PASS", status(cid, new)
+          assert "1280x800" in status("SP-DISP-001", new)["summary"]
+          bars = status("SP-DISP-003", new)
+          assert bars["status"] == "WARNING" and "left 10" in bars["summary"], bars
+          old = "ge-proton10-34"
+          assert runs[old]["outcome"] == "crashed", runs[old]
+          assert status("SP-RUN-002", old)["status"] == "FAIL"
+          assert r["summary"]["verdict"] == "fail"
+          print("Chocolate Doom expectations hold")
+          EOF

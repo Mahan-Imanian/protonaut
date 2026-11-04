@@ -1,0 +1,266 @@
+name: SteamOS Preflight
+description: Test a Windows game build under Proton in CI and report compatibility problems. Independent project, not affiliated with Valve.
+author: SteamOS Preflight contributors
+branding:
+  icon: check-circle
+  color: blue
+
+inputs:
+  build:
+    description: Directory with the packaged Windows build, relative to the workspace.
+    required: true
+  exe:
+    description: Executable path relative to the build directory, for example MyGame.exe.
+    required: true
+  runtimes:
+    description: Space-separated runtime ids, or `stable`. See `steamos-preflight proton list`.
+    default: stable
+  observe-secs:
+    description: Seconds to watch the game after launch (3-600).
+    default: "20"
+  resolution:
+    description: 1280x800, 1280x720 or 1920x1080.
+    default: 1280x800
+  fail-on:
+    description: "`fail` fails the step on FAIL results only; `warning` also on WARNING."
+    default: fail
+  network:
+    description: "`off` runs the game in a network namespace with no network; `on` allows network access."
+    default: "off"
+  artifact-name:
+    description: Name of the uploaded results artifact. Empty to skip the upload.
+    default: steamos-preflight-results
+  fail-job:
+    description: "`true` fails this step when the verdict is `fail`. `false` always succeeds so the outputs stay available (GitHub drops a failed composite action's outputs); check `verdict` yourself."
+    default: "true"
+
+outputs:
+  verdict:
+    description: "`pass` or `fail`."
+    value: ${{ steps.test.outputs.verdict }}
+  exit-code:
+    description: Exit code of `steamos-preflight test` (0 pass, 1 fail, 2 usage, 3 environment).
+    value: ${{ steps.test.outputs.exit-code }}
+  results:
+    description: Absolute path of the results directory (report.json, report.html, junit.xml, screenshots).
+    value: ${{ steps.collect.outputs.results }}
+
+runs:
+  using: composite
+  steps:
+    - name: Check inputs and runner
+      shell: bash
+      env:
+        IN_BUILD: ${{ inputs.build }}
+        IN_EXE: ${{ inputs.exe }}
+        IN_RUNTIMES: ${{ inputs.runtimes }}
+        IN_OBSERVE: ${{ inputs.observe-secs }}
+        IN_RESOLUTION: ${{ inputs.resolution }}
+        IN_FAIL_ON: ${{ inputs.fail-on }}
+        IN_NETWORK: ${{ inputs.network }}
+        IN_FAIL_JOB: ${{ inputs.fail-job }}
+      run: |
+        set -euo pipefail
+        fail() { echo "::error title=SteamOS Preflight::$1"; exit 2; }
+        [[ "$RUNNER_OS" == "Linux" && "$RUNNER_ARCH" == "X64" ]] || fail "needs an x64 Linux runner (ubuntu-24.04)"
+        [[ "$IN_BUILD" != /* && "$IN_BUILD" != *..* ]] || fail "build must be a path inside the workspace"
+        [[ -d "$GITHUB_WORKSPACE/$IN_BUILD" ]] || fail "build directory '$IN_BUILD' does not exist"
+        [[ "$IN_EXE" =~ ^[A-Za-z0-9._/\ -]+$ && "$IN_EXE" != *..* ]] || fail "exe contains unsupported characters"
+        [[ "$IN_RUNTIMES" =~ ^[a-z0-9._\ -]+$ ]] || fail "runtimes must be ids separated by spaces"
+        [[ "$IN_OBSERVE" =~ ^[0-9]{1,3}$ ]] || fail "observe-secs must be a number"
+        [[ "$IN_RESOLUTION" =~ ^(1280x800|1280x720|1920x1080)$ ]] || fail "unsupported resolution"
+        [[ "$IN_FAIL_ON" =~ ^(fail|warning)$ ]] || fail "fail-on must be fail or warning"
+        [[ "$IN_NETWORK" =~ ^(on|off)$ ]] || fail "network must be on or off"
+        [[ "$IN_FAIL_JOB" =~ ^(true|false)$ ]] || fail "fail-job must be true or false"
+
+    - name: Install system packages
+      shell: bash
+      run: |
+        set -euo pipefail
+        # Wine's 32-bit side loads i386 host libraries; without them every
+        # 32-bit game fails before it opens a window.
+        sudo dpkg --add-architecture i386
+        sudo apt-get update -qq
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+          xserver-xorg-core xserver-xorg-video-dummy x11-xserver-utils x11-utils \
+          imagemagick mesa-vulkan-drivers python3 curl util-linux tesseract-ocr tesseract-ocr-eng \
+          libc6:i386 libx11-6:i386 libxext6:i386 libxrandr2:i386 libxi6:i386 libxcursor1:i386 libxinerama1:i386 libxcomposite1:i386 libxrender1:i386 libxfixes3:i386 libfreetype6:i386 libfontconfig1:i386 libvulkan1:i386 mesa-vulkan-drivers:i386 libgl1:i386 libgl1-mesa-dri:i386 >/dev/null
+
+    - name: Install steamos-preflight
+      shell: bash
+      env:
+        ACTION_DIR: ${{ github.action_path }}
+        ACTION_REF: ${{ github.action_ref }}
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        set -euo pipefail
+        repo=Mahan-Imanian/steamos-preflight
+        if [[ "$ACTION_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          # A release tag: use the release binary, but only after its checksum
+          # and its build provenance (signed by this repository's release
+          # workflow for this exact tag) verify. Any failure stops the step.
+          dir=$(mktemp -d)
+          base="https://github.com/$repo/releases/download/$ACTION_REF"
+          curl -sSfL --proto '=https' -o "$dir/steamos-preflight-x86_64-unknown-linux-gnu" "$base/steamos-preflight-x86_64-unknown-linux-gnu"
+          curl -sSfL --proto '=https' -o "$dir/SHA256SUMS" "$base/SHA256SUMS"
+          (cd "$dir" && grep ' steamos-preflight-x86_64-unknown-linux-gnu$' SHA256SUMS | sha256sum -c -)
+          gh attestation verify "$dir/steamos-preflight-x86_64-unknown-linux-gnu" --repo "$repo" \
+            --signer-workflow "$repo/.github/workflows/release.yml" --source-ref "refs/tags/$ACTION_REF" --deny-self-hosted-runners
+          [[ "$("$dir/steamos-preflight-x86_64-unknown-linux-gnu" --version)" == "steamos-preflight ${ACTION_REF#v}" ]]
+          sudo install -m 0755 "$dir/steamos-preflight-x86_64-unknown-linux-gnu" /usr/local/bin/steamos-preflight
+          rm -rf -- "$dir"
+        else
+          # A commit SHA, a branch or a local checkout: build the exact source.
+          cd "$ACTION_DIR"
+          cargo build --locked --release --quiet
+          sudo install -m 0755 target/release/steamos-preflight /usr/local/bin/steamos-preflight
+        fi
+        steamos-preflight --version
+
+    - name: Runtime cache key
+      id: key
+      shell: bash
+      env:
+        ACTION_DIR: ${{ github.action_path }}
+      run: echo "key=steamos-preflight-runtimes-$(sha256sum "$ACTION_DIR/crates/runtime/runtimes.toml" | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore runtime downloads
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/steamos-preflight-downloads
+        key: ${{ steps.key.outputs.key }}
+
+    - name: Prepare sandbox user and runtimes
+      shell: bash
+      env:
+        IN_BUILD: ${{ inputs.build }}
+        IN_RUNTIMES: ${{ inputs.runtimes }}
+        DOWNLOADS: ${{ runner.temp }}/steamos-preflight-downloads
+      run: |
+        set -euo pipefail
+        sandbox=spf-sandbox
+        root=/var/tmp/steamos-preflight
+        id "$sandbox" >/dev/null 2>&1 || sudo useradd --system --no-create-home --home-dir "$root/home" --shell /usr/sbin/nologin "$sandbox"
+        # Root owns the top directory and the runtime cache, so a build cannot
+        # alter the Proton files a later use of the action in this job runs.
+        # The sandbox user owns only a fresh home, the build copy and results.
+        sudo install -d -o root -g root -m 0755 "$root" "$root/cache" "$root/cache/downloads"
+        sudo rm -rf -- "$root/build" "$root/results" "$root/home"
+        sudo install -d -o "$sandbox" -g "$sandbox" -m 0700 "$root/home" "$root/build" "$root/results"
+        # The game gets a copy of the build; it never sees the workspace,
+        # the git credentials or the runner's home directory.
+        sudo cp -R --no-preserve=ownership -- "$GITHUB_WORKSPACE/$IN_BUILD/." "$root/build/"
+        sudo chown -R "$sandbox:$sandbox" "$root/build"
+        mkdir -p "$DOWNLOADS"
+        if compgen -G "$DOWNLOADS/*.tar.gz" >/dev/null; then sudo cp -- "$DOWNLOADS"/*.tar.gz "$root/cache/downloads/"; fi
+        sudo steamos-preflight setup
+        for rt in $IN_RUNTIMES; do
+          sudo env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/root STEAMOS_PREFLIGHT_CACHE="$root/cache" \
+            steamos-preflight proton install "$rt"
+        done
+        sudo chown -R root:root "$root/cache"
+        sudo chmod -R u+rwX,go+rX,go-w "$root/cache"
+        sudo find "$root/cache/downloads" -maxdepth 1 -name '*.tar.gz' -type f -exec cp -- {} "$DOWNLOADS/" \;
+        sudo chown -R "$(id -u):$(id -g)" "$DOWNLOADS"
+        sudo -u "$sandbox" env -i PATH=/usr/local/bin:/usr/bin:/bin HOME="$root/home" STEAMOS_PREFLIGHT_CACHE="$root/cache" steamos-preflight diagnose
+
+    - name: Run the build under Proton
+      id: test
+      shell: bash
+      env:
+        IN_EXE: ${{ inputs.exe }}
+        IN_RUNTIMES: ${{ inputs.runtimes }}
+        IN_OBSERVE: ${{ inputs.observe-secs }}
+        IN_RESOLUTION: ${{ inputs.resolution }}
+        IN_FAIL_ON: ${{ inputs.fail-on }}
+        IN_NETWORK: ${{ inputs.network }}
+      run: |
+        set -uo pipefail
+        sandbox=spf-sandbox
+        root=/var/tmp/steamos-preflight
+        args=(test "$root/build" --exe "$IN_EXE" --observe-secs "$IN_OBSERVE" --resolution "$IN_RESOLUTION" --fail-on "$IN_FAIL_ON" --results "$root/results" -v)
+        for rt in $IN_RUNTIMES; do args+=(--runtime "$rt"); done
+        isolate=()
+        if [[ "$IN_NETWORK" == "off" ]]; then isolate=(unshare --net --); fi
+        # A clean environment: no GITHUB_TOKEN, no ACTIONS_* variables.
+        # GitHub runs `bash -e`, so a nonzero exit must be captured with `||`
+        # or the step would stop before recording the verdict.
+        code=0
+        sudo "${isolate[@]}" setpriv --reuid="$sandbox" --regid="$sandbox" --init-groups -- \
+          env -i PATH=/usr/local/bin:/usr/bin:/bin HOME="$root/home" STEAMOS_PREFLIGHT_CACHE="$root/cache" TMPDIR="$root/home" \
+          steamos-preflight "${args[@]}" || code=$?
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        case $code in
+          0) echo "verdict=pass" >> "$GITHUB_OUTPUT" ;;
+          1) echo "verdict=fail" >> "$GITHUB_OUTPUT" ;;
+          *) echo "verdict=error" >> "$GITHUB_OUTPUT" ;;
+        esac
+        exit 0
+
+    - name: Collect results
+      id: collect
+      if: always()
+      shell: bash
+      run: |
+        set -euo pipefail
+        # A build can start Linux processes that leave both its process group
+        # and its Wine prefix (for example `start /unix setsid ...`). Stop
+        # everything the sandbox user still runs before reading its files.
+        if id spf-sandbox >/dev/null 2>&1; then
+          sudo pkill -KILL -u spf-sandbox || true
+          for _ in $(seq 1 20); do pgrep -u spf-sandbox >/dev/null || break; sleep 0.5; done
+          if pgrep -u spf-sandbox >/dev/null; then
+            echo "::error title=SteamOS Preflight::processes of the sandbox user survived SIGKILL"; exit 3
+          fi
+        fi
+        root=/var/tmp/steamos-preflight/results
+        # One directory per invocation, so several uses in a job (other
+        # builds, other resolutions) never overwrite each other's results.
+        OUT=$(mktemp -d "$RUNNER_TEMP/steamos-preflight-results.XXXXXX")
+        # Everything in $root was writable by the build under test, so only
+        # regular files of known types with plain names are copied, and
+        # symlinks are never followed.
+        sudo find "$root" -type f \( -name '*.json' -o -name '*.md' -o -name '*.html' -o -name '*.xml' -o -name '*.png' -o -name '*.log' \) -size -20M -print0 |
+          while IFS= read -r -d '' f; do
+            rel="${f#"$root"/}"
+            [[ "$rel" =~ ^[A-Za-z0-9._/-]+$ && "$rel" != *..* ]] || continue
+            mkdir -p "$OUT/$(dirname "$rel")"
+            # Read as root (the sandbox results are 0700), write as the runner.
+            # shellcheck disable=SC2024
+            sudo cat -- "$f" > "$OUT/$rel"
+          done
+        echo "results=$OUT" >> "$GITHUB_OUTPUT"
+        if [[ -f "$OUT/report.json" ]]; then
+          # Re-render from the JSON with the trusted CLI; report.md from the
+          # sandbox is not trusted.
+          steamos-preflight report "$OUT/report.json" --format markdown --out "$OUT/report.md"
+          sed '1d' "$OUT/report.md" >> "$GITHUB_STEP_SUMMARY"
+        else
+          echo "## SteamOS Preflight did not produce a report" >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+    - name: Upload results
+      if: always() && inputs.artifact-name != ''
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ steps.collect.outputs.results }}
+        if-no-files-found: warn
+        retention-days: 14
+
+    - name: Set step result
+      shell: bash
+      env:
+        CODE: ${{ steps.test.outputs.exit-code }}
+        FAIL_JOB: ${{ inputs.fail-job }}
+      run: |
+        case "$CODE" in
+          0) echo "SteamOS Preflight: no failures." ;;
+          1)
+            if [[ "$FAIL_JOB" == "false" ]]; then
+              echo "::warning title=SteamOS Preflight::compatibility failures found; see the job summary"
+            else
+              echo "::error title=SteamOS Preflight::compatibility failures found; see the job summary"; exit 1
+            fi ;;
+          *) echo "::error title=SteamOS Preflight::the test could not run (exit $CODE); see the log above"; exit "${CODE:-3}" ;;
+        esac
