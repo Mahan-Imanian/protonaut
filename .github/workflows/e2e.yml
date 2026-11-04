@@ -137,6 +137,31 @@ jobs:
           RESULTS: ${{ steps.healthy.outputs.results }}
         run: |
           ! grep -rl "ghs_\|GITHUB_TOKEN\|ACTIONS_RUNTIME" "$RESULTS"
+      - name: Package the sandbox probe
+        run: |
+          mkdir -p dist/probe
+          cp fixtures/bin/fx_probe.exe dist/probe/Game.exe
+      - name: Hostile build cannot reach the network, the runner or root
+        id: probe
+        uses: ./
+        with:
+          build: dist/probe
+          exe: Game.exe
+          observe-secs: "40"
+          artifact-name: ""
+          fail-job: "false"
+      - name: Assert the probe results
+        run: |
+          results=/var/tmp/steamos-preflight/build/probe-results.txt
+          sudo cat "$results" | tee probe.txt
+          grep -q "^PROBE done" probe.txt
+          for probe in dns net_tcp runner_work runner_temp runner_home write_runner_home sudo; do
+            grep -q "^PROBE $probe: BLOCKED" probe.txt || { echo "::error::sandbox probe $probe was not blocked"; exit 1; }
+          done
+          grep -q "^PROBE proc_tokens: none" probe.txt || { echo "::error::a CI token was readable from the sandbox"; exit 1; }
+          grep -q "^PROBE escape: spawned" probe.txt
+          if pgrep -u spf-sandbox -a; then echo "::error::sandbox processes survived the action"; exit 1; fi
+          echo "sandbox probe: all blocked, no surviving processes"
       - name: Report for the PR comment job
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
