@@ -175,25 +175,45 @@ const ERROR_PHRASES: &[&str] = &[
 ];
 const MAX_ERROR_LINES: usize = 5;
 
-/// Lines of OCR text that read like an error message, whitespace-collapsed
-/// and truncated. Whole-word matching only, so "terror" or "failsafe" do not
-/// count.
-pub fn error_lines(text: &str) -> Vec<String> {
+/// Short snippets of OCR text around words that read like an error message.
+/// OCR breaks lines in the middle of sentences ("none could be" / "found."),
+/// so the text is matched as one sequence of words, whole words only:
+/// "terror" or "failsafe" do not count.
+pub fn error_snippets(text: &str) -> Vec<String> {
+    let words: Vec<&str> = text.split_whitespace().collect();
+    let norm: Vec<String> = words
+        .iter()
+        .map(|w| {
+            w.trim_matches(|c: char| !(c.is_alphanumeric() || c == '\''))
+                .to_lowercase()
+        })
+        .collect();
+    let phrases: Vec<Vec<&str>> = ERROR_PHRASES
+        .iter()
+        .map(|p| p.split(' ').collect())
+        .collect();
     let mut out = Vec::new();
-    for line in text.lines() {
-        let clean = line.split_whitespace().collect::<Vec<_>>().join(" ");
-        if clean.is_empty() {
+    let mut covered_until = 0usize;
+    for i in 0..norm.len() {
+        let hit_len = if ERROR_WORDS.contains(&norm[i].as_str()) {
+            1
+        } else {
+            phrases
+                .iter()
+                .find(|p| {
+                    norm.len() >= i + p.len() && p.iter().zip(&norm[i..]).all(|(a, b)| a == b)
+                })
+                .map_or(0, Vec::len)
+        };
+        if hit_len == 0 || i < covered_until {
             continue;
         }
-        let lower = clean.to_lowercase();
-        let words: Vec<&str> = lower
-            .split(|c: char| !(c.is_alphanumeric() || c == '\''))
-            .filter(|w| !w.is_empty())
-            .collect();
-        let hit = words.iter().any(|w| ERROR_WORDS.contains(w))
-            || ERROR_PHRASES.iter().any(|p| words.join(" ").contains(p));
-        if hit && out.len() < MAX_ERROR_LINES {
-            out.push(clean.chars().take(160).collect());
+        let start = i.saturating_sub(6);
+        let end = (i + hit_len + 6).min(words.len());
+        out.push(words[start..end].join(" ").chars().take(160).collect());
+        covered_until = end;
+        if out.len() == MAX_ERROR_LINES {
+            break;
         }
     }
     out
@@ -290,33 +310,40 @@ mod tests {
 
     // OCR output captured from real runs: OpenTTD 15.3 without its base
     // graphics, OpenTTD with software rendering, and a Godot 3D scene.
-    const OCR_OPENTTD_NOGFX: &str = "WISSING Grapnics\nOpenTTD requires graphics to function but none could be found. Do you allow\nOpenTTD to download and install these graphics?\nYes, download the graphics No, quit OpenTTD";
+    const OCR_OPENTTD_NOGFX: &str = "WISSING Grapnics\nOpenTTD requires graphics to function but none could be\nfound. Do you allow OpenTTD to download and install\nthese graphics?\nYes, download the graphics\nNo, quit OpenTTD\n";
     const OCR_OPENTTD_VIDEO: &str = "Play EY Scenario\nPeUCIPAlE IT AULOTT ated SUTVEY 7 = Message = SoV +4\nte \u{201c}I wy Error with video settings... en Ek a te.";
 
     #[test]
     fn real_in_game_error_messages_are_found() {
-        let nogfx = error_lines(OCR_OPENTTD_NOGFX);
+        // The phrase is split across two OCR lines, exactly as Tesseract
+        // returned it on a GitHub-hosted runner.
+        let nogfx = error_snippets(OCR_OPENTTD_NOGFX);
         assert_eq!(nogfx.len(), 1, "{nogfx:?}");
-        assert!(nogfx[0].contains("none could be found"));
-        let video = error_lines(OCR_OPENTTD_VIDEO);
+        assert!(nogfx[0].contains("none could be found."), "{nogfx:?}");
+        let video = error_snippets(OCR_OPENTTD_VIDEO);
         assert_eq!(video.len(), 1, "{video:?}");
         assert!(video[0].contains("Error with video settings"));
     }
 
     #[test]
     fn ordinary_text_and_partial_words_are_not_errors() {
-        assert!(error_lines("").is_empty());
-        assert!(error_lines("New Game\nPlay Scenario\nOptions\nQuit").is_empty());
-        assert!(error_lines("Terror of the Deep\nfailsafe mode\nmissingno").is_empty());
-        assert_eq!(error_lines("Can't connect: Server not found").len(), 1);
+        assert!(error_snippets("").is_empty());
+        assert!(error_snippets("New Game\nPlay Scenario\nOptions\nQuit").is_empty());
+        assert!(error_snippets("Terror of the Deep\nfailsafe mode\nmissingno").is_empty());
+        assert_eq!(error_snippets("Can't connect: Server not found").len(), 1);
+        assert_eq!(
+            error_snippets("Error: file\nnot found").len(),
+            1,
+            "nearby hits share one snippet"
+        );
     }
 
     #[test]
-    fn error_lines_are_capped() {
-        assert_eq!(
-            error_lines(&"fatal error\n".repeat(20)).len(),
-            MAX_ERROR_LINES
-        );
+    fn error_snippets_are_capped() {
+        let many: String = (0..40)
+            .map(|i| format!("word{i} a b c d e fatal f g h i j k\n"))
+            .collect();
+        assert_eq!(error_snippets(&many).len(), MAX_ERROR_LINES);
     }
 
     #[test]

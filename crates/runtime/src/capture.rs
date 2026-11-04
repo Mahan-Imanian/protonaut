@@ -230,7 +230,7 @@ mod tests {
         .await
         .unwrap();
         let text = read_text(&img, dir.path()).await.unwrap();
-        let hits = preflight_core::observe::error_lines(&text);
+        let hits = preflight_core::observe::error_snippets(&text);
         assert_eq!(hits.len(), 1, "OCR read {text:?}");
         assert!(
             !dir.path().join("ocr-input.png").exists(),

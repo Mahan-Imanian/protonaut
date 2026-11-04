@@ -81,7 +81,8 @@ pub async fn run(json: bool) -> u8 {
         detail: if on_path("tesseract") {
             "found".into()
         } else {
-            "missing: SP-DISP-005 will be NOT_TESTED; install tesseract-ocr tesseract-ocr-eng".into()
+            "missing: SP-DISP-005 will be NOT_TESTED; install tesseract-ocr tesseract-ocr-eng"
+                .into()
         },
     });
     let root = nix::unistd::geteuid().is_root();
