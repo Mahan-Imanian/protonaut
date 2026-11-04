@@ -91,3 +91,31 @@ jobs:
                   print(f"  {c['status']:<10} {c['id']:<13} {c.get('runtime') or 'static':<15} {c['summary']}")
           EOF
           done
+      - name: Assert what was verified by hand
+        env:
+          FULL: ${{ steps.full.outputs.results }}
+        run: |
+          # Expectations come from reviewing the screenshots of earlier runs:
+          # OpenTTD 15.3 shows its title screen in a 960x600 window.
+          python3 - "$FULL/report.json" <<'EOF'
+          import json, sys
+          r = json.load(open(sys.argv[1]))
+          runs = {run["runtime"]: run for run in r["runs"]}
+          def status(cid, rt=None):
+              return next(c for c in r["checks"] if c["id"] == cid and c.get("runtime") == rt)
+          assert r["summary"]["verdict"] == "pass", r["summary"]
+          assert status("SP-PE-003")["status"] == "PASS"
+          for rt in ("ge-proton11-12", "ge-proton10-34"):
+              assert runs[rt]["outcome"] == "survived", runs[rt]
+              assert status("SP-RUN-003", rt)["status"] == "PASS"
+              assert status("SP-DISP-001", rt)["status"] == "PASS"
+          assert runs["ge-proton11-12"]["capture_verified"] is True
+          assert status("SP-DISP-002", "ge-proton11-12")["status"] == "PASS"
+          fill = status("SP-DISP-003", "ge-proton11-12")
+          assert fill["status"] == "WARNING" and "960x600 window" in fill["summary"], fill
+          print("OpenTTD expectations hold")
+          EOF
+          # The build without base graphics is a known false negative: OpenTTD
+          # draws its "Missing graphics" message inside its own window, which
+          # no current check reads. It is run to keep that gap visible in the
+          # summary above, not asserted. See docs/roadmap.md.
