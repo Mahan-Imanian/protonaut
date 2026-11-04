@@ -297,7 +297,9 @@ jobs:
         with:
           build: dist/doom
           exe: chocolate-doom.exe
-          runtimes: ge-proton11-12 ge-proton10-34
+          # GE-Proton10-34 last would leave its files in the build copy;
+          # run it first so the files read below come from GE-Proton11-12.
+          runtimes: ge-proton10-34 ge-proton11-12
           observe-secs: "40"
           artifact-name: real-chocolate-doom
           fail-job: "false"
@@ -318,3 +320,9 @@ jobs:
                       print("        ", d)
           EOF
           for f in "$RESULTS"/runs/*/runtime.log; do echo "## $f"; grep -aiE "d3d9|direct3d|dxvk|swapchain|present mode" "$f" | head -12 || true; done
+          # DXVK and the game write their own logs next to the executable.
+          sudo find /var/tmp/steamos-preflight/build -maxdepth 1 -type f -newer dist/doom/chocolate-doom.exe -printf '%f %s\n'
+          for f in /var/tmp/steamos-preflight/build/*.log /var/tmp/steamos-preflight/build/*.txt; do
+            sudo test -f "$f" || continue
+            echo "## $f"; sudo head -n 40 "$f"
+          done
