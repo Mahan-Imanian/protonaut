@@ -1,0 +1,15 @@
+name: Feature or new check
+description: Propose a new check or capability.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem it detects or solves
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and failure modes
+      description: How would it be detected (static, observed, heuristic)? When could it be wrong?

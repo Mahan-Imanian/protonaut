@@ -1,0 +1,32 @@
+name: Bug report
+description: SteamOS Preflight itself misbehaves (crash, wrong exit code, broken report).
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: For security problems, do not open an issue; see SECURITY.md.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: steamos-preflight --version, or the action's SHA
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: Command or workflow snippet. A fixture from fixtures/ that shows the problem is ideal.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnose
+    attributes:
+      label: Output of `steamos-preflight diagnose`
+      render: text
