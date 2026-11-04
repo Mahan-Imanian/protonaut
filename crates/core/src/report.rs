@@ -52,6 +52,8 @@ pub fn assemble(input: ReportInput) -> Report {
             version: input.tool_version,
         },
         generated_at: OffsetDateTime::now_utc()
+            .replace_nanosecond(0)
+            .unwrap_or_else(|_| OffsetDateTime::now_utc())
             .format(&Rfc3339)
             .unwrap_or_else(|_| "unknown".to_owned()),
         target: input.target,
@@ -396,7 +398,10 @@ pub fn render_html(r: &Report) -> String {
         s.push_str("</table>");
     }
     s.push_str("<h2>Checks</h2><table><tr><th>Status</th><th>Check</th><th>Runtime</th><th>Result</th><th>Evidence</th></tr>");
-    for check in &r.checks {
+    // Problems first: FAIL, WARNING, UNKNOWN, NOT_TESTED, then PASS.
+    let mut ordered: Vec<&CheckResult> = r.checks.iter().collect();
+    ordered.sort_by_key(|c| c.status);
+    for check in ordered {
         let _ = write!(
             s,
             "<tr class=\"{}\"><td>{}</td><td><b>{}</b><br><code>{}</code></td><td>{}</td><td>{}",
@@ -540,6 +545,27 @@ mod tests {
         assert!(!h.contains("etc/passwd"));
         assert!(!h.contains("onerror=x.png"));
         assert!(h.contains("src=\"runs/ge/shot.png\""));
+    }
+
+    #[test]
+    fn html_lists_problems_before_passes() {
+        let mut r = sample(Status::Pass);
+        r.checks.push(CheckResult::new(
+            "SP-RUN-002",
+            "Stability",
+            Category::Runtime,
+            Status::Fail,
+            Evidence::Observed,
+            "crashed",
+        ));
+        let h = render_html(&r);
+        assert!(h.find("SP-RUN-002").unwrap() < h.find("SP-AC-001").unwrap());
+    }
+
+    #[test]
+    fn timestamp_has_whole_seconds() {
+        let t = sample(Status::Pass).generated_at;
+        assert!(t.ends_with('Z') && !t.contains('.'), "{t}");
     }
 
     #[test]
