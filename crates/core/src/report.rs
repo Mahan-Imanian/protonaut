@@ -141,13 +141,29 @@ fn status_icon(s: Status) -> &'static str {
     }
 }
 
+/// The one-line result. A run with warnings is never summarised as a plain
+/// pass: warnings are things a person has to look at.
+pub fn headline(r: &Report) -> String {
+    let w = r.summary.counts.warning;
+    match r.summary.verdict {
+        Verdict::Fail => "Failures found".to_owned(),
+        Verdict::Pass if w > 0 => format!(
+            "No failures, {w} warning{} to review",
+            if w == 1 { "" } else { "s" }
+        ),
+        Verdict::Pass => "No failures found".to_owned(),
+    }
+}
+
 pub fn render_markdown(r: &Report, artifact_url: Option<&str>) -> String {
     let mut s = String::new();
     let c = &r.summary.counts;
-    let head = match r.summary.verdict {
-        Verdict::Pass => "✅ SteamOS Preflight: no failures",
-        Verdict::Fail => "❌ SteamOS Preflight: failures found",
+    let icon = match (r.summary.verdict, c.warning) {
+        (Verdict::Fail, _) => "❌",
+        (Verdict::Pass, 0) => "✅",
+        (Verdict::Pass, _) => "⚠️",
     };
+    let head = format!("{icon} SteamOS Preflight: {}", headline(r));
     let _ = writeln!(s, "{COMMENT_MARKER}\n## {head}\n");
     let _ = writeln!(
         s,
@@ -352,10 +368,7 @@ pub fn is_safe_relative_path(p: &str) -> bool {
 pub fn render_html(r: &Report) -> String {
     let mut s = String::new();
     let c = &r.summary.counts;
-    let verdict = match r.summary.verdict {
-        Verdict::Pass => "No failures",
-        Verdict::Fail => "Failures found",
-    };
+    let verdict = headline(r);
     let _ = write!(
         s,
         "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\
@@ -363,10 +376,10 @@ pub fn render_html(r: &Report) -> String {
 <title>SteamOS Preflight report</title><style>{CSS}</style></head><body><main>\
 <h1>SteamOS Preflight <span class=\"v {}\">{}</span></h1>\
 <p class=\"meta\"><code>{}</code> · {} · {} pass · {} fail · {} warning · {} unknown · {} not tested</p>",
-        if r.summary.verdict == Verdict::Pass {
-            "ok"
-        } else {
-            "bad"
+        match (r.summary.verdict, c.warning) {
+            (Verdict::Fail, _) => "bad",
+            (Verdict::Pass, 0) => "ok",
+            (Verdict::Pass, _) => "warn",
         },
         verdict,
         html_escape(&r.target.exe),
@@ -448,11 +461,11 @@ pub fn render_html(r: &Report) -> String {
 
 const CSS: &str = "body{font:15px/1.5 system-ui,sans-serif;margin:0;background:#f7f7f8;color:#1b1b1f}main{max-width:1100px;margin:0 auto;padding:16px}\
 table{border-collapse:collapse;width:100%;background:#fff;margin:8px 0 24px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;vertical-align:top}\
-.meta{color:#555}.v{font-size:.6em;padding:2px 8px;border-radius:6px;vertical-align:middle}.ok{background:#d9f5df}.bad{background:#fbdcdc}\
+.meta{color:#555}.v{font-size:.6em;padding:2px 8px;border-radius:6px;vertical-align:middle}.ok{background:#d9f5df}.bad{background:#fbdcdc}.warn{background:#fff1cc}\
 tr.fail td:first-child{background:#fbdcdc}tr.warning td:first-child{background:#fff1cc}tr.pass td:first-child{background:#d9f5df}\
 tr.unknown td:first-child,tr.not_tested td:first-child{background:#eceff3}img{max-width:320px;display:block;margin-top:6px;border:1px solid #ccc}\
 @media (prefers-color-scheme:dark){body{background:#151518;color:#e8e8ec}table{background:#1f1f24}th,td{border-color:#3a3a42}.meta{color:#a0a0aa}\
-.ok,tr.pass td:first-child{background:#1d3b25}.bad,tr.fail td:first-child{background:#4a2020}tr.warning td:first-child{background:#4a3c14}\
+.ok,tr.pass td:first-child{background:#1d3b25}.bad,tr.fail td:first-child{background:#4a2020}.warn{background:#4a3c14}tr.warning td:first-child{background:#4a3c14}\
 tr.unknown td:first-child,tr.not_tested td:first-child{background:#2a2d33}}";
 
 #[cfg(test)]
@@ -501,6 +514,19 @@ mod tests {
         assert!(!md.contains("<img"), "{md}");
         assert!(!md.contains("](javascript"), "{md}");
         assert!(md.starts_with(COMMENT_MARKER));
+    }
+
+    #[test]
+    fn warnings_are_never_summarised_as_a_plain_pass() {
+        assert_eq!(headline(&sample(Status::Pass)), "No failures found");
+        let w = sample(Status::Warning);
+        assert_eq!(headline(&w), "No failures, 1 warning to review");
+        assert!(
+            render_markdown(&w, None)
+                .contains("⚠️ SteamOS Preflight: No failures, 1 warning to review")
+        );
+        assert!(render_html(&w).contains("class=\"v warn\""));
+        assert_eq!(headline(&sample(Status::Fail)), "Failures found");
     }
 
     #[test]

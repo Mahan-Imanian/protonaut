@@ -2,13 +2,14 @@
 //! is unit-tested without Proton.
 
 use crate::model::{Category, CheckResult, Evidence, RunOutcome, Status};
-use crate::observe::{RunObservation, Screenshot};
+use crate::observe::{RunObservation, ScreenText, error_lines, representative};
 
 pub fn evaluate(obs: &RunObservation) -> Vec<CheckResult> {
     let mut out = vec![launch(obs), stability(obs), log_errors(obs)];
     out.push(window(obs));
     out.extend(display_checks(obs));
     out.push(dialog_check(obs));
+    out.push(screen_text_check(obs));
     out.extend(hardware_not_tested(obs));
     for c in &mut out {
         c.runtime = Some(obs.runtime.clone());
@@ -191,16 +192,6 @@ fn window(obs: &RunObservation) -> CheckResult {
     }
 }
 
-/// The frame that best represents the game: the last one that is not black,
-/// falling back to the last frame.
-fn representative(shots: &[Screenshot]) -> Option<&Screenshot> {
-    shots
-        .iter()
-        .rev()
-        .find(|s| !s.stats.is_black())
-        .or_else(|| shots.last())
-}
-
 fn display_checks(obs: &RunObservation) -> Vec<CheckResult> {
     let ids = [
         ("SP-DISP-002", "Game renders visible content"),
@@ -368,6 +359,53 @@ fn dialog_check(obs: &RunObservation) -> CheckResult {
     }
 }
 
+/// A game can keep running while it shows a fatal problem in its own window
+/// (OpenTTD without its graphics set does). OCR is the only signal for that,
+/// so the result is a heuristic WARNING, never FAIL.
+fn screen_text_check(obs: &RunObservation) -> CheckResult {
+    let (id, title) = ("SP-DISP-005", "No error message on screen");
+    let not_tested = |why: String| {
+        CheckResult::new(
+            id,
+            title,
+            Category::Display,
+            Status::NotTested,
+            Evidence::None,
+            why,
+        )
+    };
+    if obs.outcome == RunOutcome::LaunchFailed {
+        return not_tested("The game never started.".into());
+    }
+    if obs.capture_verified != Some(true) {
+        return not_tested(
+            "Screen capture is not verified for this runtime, so no text could be read.".into(),
+        );
+    }
+    match &obs.screen_text {
+        ScreenText::NotRead(why) => not_tested(why.clone()),
+        ScreenText::Read { path, text } => {
+            let hits = error_lines(text);
+            let words = text.split_whitespace().count();
+            if hits.is_empty() {
+                CheckResult::new(
+                    id,
+                    title,
+                    Category::Display,
+                    Status::Pass,
+                    Evidence::Heuristic,
+                    format!("OCR read {words} words on screen; none look like an error message."),
+                )
+                .with_artifact(path.clone())
+            } else {
+                CheckResult::new(id, title, Category::Display, Status::Warning, Evidence::Heuristic, "Text on screen reads like an error message. A game can keep running while it shows a fatal problem; check the screenshot.")
+                    .with_details(hits)
+                    .with_artifact(path.clone())
+            }
+        }
+    }
+}
+
 fn hardware_not_tested(_obs: &RunObservation) -> Vec<CheckResult> {
     [
         ("SP-HW-001", "Frame rate at default settings", "Valve's 30 fps target needs real Deck or Steam Machine hardware; this run uses CPU software rendering."),
@@ -383,7 +421,7 @@ fn hardware_not_tested(_obs: &RunObservation) -> Vec<CheckResult> {
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use crate::observe::{Bars, FrameStats, LogFindings, WindowSeen};
+    use crate::observe::{Bars, FrameStats, LogFindings, Screenshot, WindowSeen};
 
     fn stats(black: bool, uniform: bool, bars: Bars) -> FrameStats {
         FrameStats {
@@ -418,6 +456,10 @@ mod tests {
             log: LogFindings::default(),
             log_path: Some("runs/x/runtime.log".into()),
             display: (1280, 800),
+            screen_text: ScreenText::Read {
+                path: "runs/x/shot.png".into(),
+                text: "New Game\nQuit".into(),
+            },
         }
     }
 
@@ -532,6 +574,44 @@ mod tests {
             height: 150,
         });
         assert_eq!(get(&evaluate(&o), "SP-DISP-003").status, Status::Pass);
+    }
+
+    #[test]
+    fn in_window_error_text_warns_even_though_the_game_survived() {
+        // Regression: OpenTTD without graphics stays alive and draws its
+        // error inside its window; it used to pass every check.
+        let mut o = obs(RunOutcome::Survived);
+        o.screen_text = ScreenText::Read {
+            path: "runs/x/shot.png".into(),
+            text:
+                "Missing graphics\nOpenTTD requires graphics to function but none could be found."
+                    .into(),
+        };
+        let r = evaluate(&o);
+        let c = get(&r, "SP-DISP-005");
+        assert_eq!(
+            (c.status, c.evidence),
+            (Status::Warning, Evidence::Heuristic)
+        );
+        assert_eq!(get(&r, "SP-RUN-002").status, Status::Pass);
+        assert_eq!(
+            crate::model::verdict(&r, crate::model::FailOn::Warning),
+            crate::model::Verdict::Fail
+        );
+    }
+
+    #[test]
+    fn screen_text_is_not_tested_without_ocr_or_capture() {
+        let mut o = obs(RunOutcome::Survived);
+        o.screen_text = ScreenText::NotRead("tesseract is not installed".into());
+        assert_eq!(get(&evaluate(&o), "SP-DISP-005").status, Status::NotTested);
+        let mut o = obs(RunOutcome::Survived);
+        o.capture_verified = Some(false);
+        assert_eq!(get(&evaluate(&o), "SP-DISP-005").status, Status::NotTested);
+        assert_eq!(
+            get(&evaluate(&obs(RunOutcome::Survived)), "SP-DISP-005").status,
+            Status::Pass
+        );
     }
 
     #[test]

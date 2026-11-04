@@ -54,6 +54,40 @@ pub fn decode_stats(path: &Path) -> Result<FrameStats, RuntimeError> {
         .ok_or_else(|| RuntimeError::Image("empty image".into()))
 }
 
+/// Reads text from a frame with Tesseract. Upscaling three times in
+/// grayscale first is what makes small UI text legible to it.
+pub async fn read_text(image: &Path, scratch: &Path) -> Result<String, RuntimeError> {
+    let prepared = scratch.join("ocr-input.png");
+    run_tool(
+        "convert",
+        &[],
+        &[
+            image.as_os_str(),
+            "-colorspace".as_ref(),
+            "Gray".as_ref(),
+            "-resize".as_ref(),
+            "300%".as_ref(),
+            prepared.as_os_str(),
+        ],
+        Duration::from_secs(60),
+    )
+    .await?;
+    let text = run_tool(
+        "tesseract",
+        &[],
+        &[
+            prepared.as_os_str(),
+            "-".as_ref(),
+            "--psm".as_ref(),
+            "11".as_ref(),
+        ],
+        Duration::from_secs(120),
+    )
+    .await;
+    let _ = std::fs::remove_file(&prepared);
+    text
+}
+
 /// Viewable top-level windows. Wine creates many hidden helper windows, so
 /// each child of the root window is checked for `IsViewable`.
 pub async fn windows(display: &str) -> Result<Vec<WindowSeen>, RuntimeError> {
@@ -169,6 +203,39 @@ mod tests {
         let s = decode_stats(&p).unwrap();
         assert_eq!((s.width, s.height), (4, 2));
         assert!(s.matches_control());
+    }
+
+    /// Needs ImageMagick and Tesseract, which CI installs.
+    #[tokio::test]
+    async fn ocr_reads_rendered_error_text() {
+        let dir = tempfile::tempdir().unwrap();
+        let img = dir.path().join("t.png");
+        run_tool(
+            "convert",
+            &[
+                "-size",
+                "1280x800",
+                "xc:black",
+                "-fill",
+                "white",
+                "-pointsize",
+                "28",
+                "-annotate",
+                "+200+400",
+                "Fatal error: required data files are missing",
+            ],
+            &[img.as_os_str()],
+            Duration::from_secs(30),
+        )
+        .await
+        .unwrap();
+        let text = read_text(&img, dir.path()).await.unwrap();
+        let hits = preflight_core::observe::error_lines(&text);
+        assert_eq!(hits.len(), 1, "OCR read {text:?}");
+        assert!(
+            !dir.path().join("ocr-input.png").exists(),
+            "scratch image is removed"
+        );
     }
 
     #[test]

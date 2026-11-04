@@ -8,7 +8,7 @@ use preflight_runtime::install::{Cache, Manifest, default_cache_dir};
 
 use crate::exit;
 
-const APT: &str = "sudo apt-get install --no-install-recommends xserver-xorg-core xserver-xorg-video-dummy x11-xserver-utils x11-utils imagemagick mesa-vulkan-drivers python3 curl";
+const APT: &str = "sudo apt-get install --no-install-recommends xserver-xorg-core xserver-xorg-video-dummy x11-xserver-utils x11-utils imagemagick mesa-vulkan-drivers python3 curl tesseract-ocr tesseract-ocr-eng";
 const MIN_CACHE_BYTES: u64 = 4 * 1024 * 1024 * 1024;
 const MIN_TEMP_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 
@@ -74,6 +74,16 @@ pub async fn run(json: bool) -> u8 {
         APT,
     );
 
+    items.push(Item {
+        name: "tesseract (OCR for SP-DISP-005)",
+        ok: on_path("tesseract"),
+        required: false,
+        detail: if on_path("tesseract") {
+            "found".into()
+        } else {
+            "missing: SP-DISP-005 will be NOT_TESTED; install tesseract-ocr tesseract-ocr-eng".into()
+        },
+    });
     let root = nix::unistd::geteuid().is_root();
     let conf = Path::new(SYSTEM_CONFIG_DIR).join(SYSTEM_CONFIG_NAME);
     items.push(Item {
