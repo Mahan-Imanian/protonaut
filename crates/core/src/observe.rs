@@ -30,7 +30,8 @@ const BLACK: u8 = 16;
 /// `rgb` is tightly packed RGB8, row-major.
 pub fn frame_stats(width: u32, height: u32, rgb: &[u8]) -> Option<FrameStats> {
     let n = (width as usize).checked_mul(height as usize)?;
-    if n == 0 || rgb.len() < n * 3 {
+    let bytes = n.checked_mul(3)?;
+    if n == 0 || rgb.len() < bytes {
         return None;
     }
     let px = |x: u32, y: u32| {
@@ -40,7 +41,7 @@ pub fn frame_stats(width: u32, height: u32, rgb: &[u8]) -> Option<FrameStats> {
     let mut sum = [0f64; 3];
     let mut sq = [0f64; 3];
     let mut black = 0usize;
-    for p in rgb[..n * 3].chunks_exact(3) {
+    for p in rgb[..bytes].chunks_exact(3) {
         for c in 0..3 {
             let v = f64::from(p[c]);
             sum[c] += v;
