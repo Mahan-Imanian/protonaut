@@ -2,6 +2,7 @@
 rules:
   self-repository:
     ignore:
-      # e2e.yml deliberately runs `uses: ./` and `uses: ./comment` so the
-      # end-to-end job tests the exact checked-out code of this commit.
+      # These workflows deliberately run `uses: ./` and `uses: ./comment` so
+      # they test the exact checked-out code of this commit.
       - e2e.yml
+      - real-games.yml

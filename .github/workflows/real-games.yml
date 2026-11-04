@@ -1,0 +1,93 @@
+# Runs real open-source games through the action, as a check that the tool
+# behaves sensibly beyond the synthetic fixtures. Downloads are pinned by
+# SHA-256; the games run only on GitHub-hosted runners, inside the action's
+# sandbox.
+name: Real games
+
+on:
+  pull_request:
+    paths:
+      - "action.yml"
+      - "crates/**"
+      - ".github/workflows/real-games.yml"
+  schedule:
+    - cron: "41 5 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: real-games-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # OpenTTD 15.3 (GPL-2.0) and OpenGFX 8.0 (GPL-2.0) from the official CDN.
+  # SHA-1 values match the publisher's manifest.yaml; OpenTTD's SHA-256 is
+  # also listed there.
+  OPENTTD_URL: https://cdn.openttd.org/openttd-releases/15.3/openttd-15.3-windows-win64.zip
+  OPENTTD_SHA256: 61c0a6a43d81008c7ff4330fb56351bbf66a980cdad041f1d0e08b51f2eeb34c
+  OPENGFX_URL: https://cdn.openttd.org/opengfx-releases/8.0/opengfx-8.0-all.zip
+  OPENGFX_SHA256: 43a0c1dabf39cb865394f3a6cc36d4da5c10ecfaaf55652043104806810903be
+
+jobs:
+  openttd:
+    name: OpenTTD 15.3
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download and verify
+        run: |
+          curl -sSfL -o openttd.zip "$OPENTTD_URL"
+          curl -sSfL -o opengfx.zip "$OPENGFX_URL"
+          echo "$OPENTTD_SHA256  openttd.zip" | sha256sum -c -
+          echo "$OPENGFX_SHA256  opengfx.zip" | sha256sum -c -
+      - name: Assemble a complete build and one without base graphics
+        run: |
+          mkdir -p unpack gfx dist
+          unzip -q openttd.zip -d unpack
+          unzip -q opengfx.zip -d gfx
+          game=$(dirname "$(find unpack -maxdepth 2 -name openttd.exe)")
+          cp -r "$game" dist/openttd-nogfx
+          cp -r "$game" dist/openttd
+          cp gfx/*.tar dist/openttd/baseset/
+      - name: Complete build
+        id: full
+        uses: ./
+        with:
+          build: dist/openttd
+          exe: openttd.exe
+          runtimes: ge-proton11-12 ge-proton10-34
+          observe-secs: "40"
+          artifact-name: real-openttd
+          fail-job: "false"
+      - name: Build without base graphics
+        id: nogfx
+        uses: ./
+        with:
+          build: dist/openttd-nogfx
+          exe: openttd.exe
+          runtimes: ge-proton11-12
+          observe-secs: "40"
+          artifact-name: real-openttd-nogfx
+          fail-job: "false"
+      - name: Summarise
+        env:
+          FULL: ${{ steps.full.outputs.results }}
+          NOGFX: ${{ steps.nogfx.outputs.results }}
+        run: |
+          for r in "$FULL" "$NOGFX"; do
+            python3 - "$r/report.json" <<'EOF'
+          import json, sys
+          r = json.load(open(sys.argv[1]))
+          print("==", sys.argv[1], r["summary"])
+          for run in r["runs"]:
+              print("  run", run)
+          for c in r["checks"]:
+              if c["category"] != "hardware":
+                  print(f"  {c['status']:<10} {c['id']:<13} {c.get('runtime') or 'static':<15} {c['summary']}")
+          EOF
+          done
