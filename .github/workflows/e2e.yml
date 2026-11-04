@@ -1,0 +1,160 @@
+# Expensive end-to-end tests: real Proton builds, fixtures, and the GitHub
+# Action itself. Separate from CI so normal pushes stay fast.
+name: End-to-end
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "crates/**"
+      - "fixtures/**"
+      - "tests/e2e/**"
+      - "scripts/e2e.py"
+      - "action.yml"
+      - "comment/**"
+      - "Cargo.lock"
+      - ".github/workflows/e2e.yml"
+  schedule:
+    # Weekly, to catch runner image or package changes.
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fixtures:
+    name: Fixtures under ${{ matrix.runtime }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [ge-proton11-12, ge-proton10-34]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: System packages
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends xserver-xorg-core xserver-xorg-video-dummy x11-xserver-utils x11-utils imagemagick mesa-vulkan-drivers
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/steamos-preflight/downloads
+          key: runtime-${{ matrix.runtime }}-${{ hashFiles('crates/runtime/runtimes.toml') }}
+      - run: cargo build --locked --release
+      - name: Install runtime and display config
+        env:
+          RUNTIME: ${{ matrix.runtime }}
+        run: |
+          sudo target/release/steamos-preflight setup
+          target/release/steamos-preflight proton install "$RUNTIME"
+          target/release/steamos-preflight diagnose
+      - name: Run every fixture
+        env:
+          RUNTIME: ${{ matrix.runtime }}
+        run: |
+          start=$(date +%s)
+          python3 scripts/e2e.py --bin target/release/steamos-preflight --runtime "$RUNTIME" --work "$RUNNER_TEMP/e2e" | tee e2e.txt
+          echo "e2e wall time: $(( $(date +%s) - start ))s" | tee -a e2e.txt
+      - name: No orphan processes
+        if: always()
+        run: |
+          left=$(pgrep -fa 'wineserver|winedevice|services.exe|/usr/lib/xorg/Xorg' || true)
+          if [[ -n "$left" ]]; then echo "$left"; echo "::error::processes left behind"; exit 1; fi
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-${{ matrix.runtime }}
+          path: |
+            ${{ runner.temp }}/e2e/*/results
+            e2e.txt
+          retention-days: 7
+
+  action:
+    name: The GitHub Action (healthy and crashing build)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Package two fixture "games"
+        run: |
+          mkdir -p dist/healthy dist/crashing
+          cp fixtures/bin/fx_scene.exe dist/healthy/Game.exe
+          cp fixtures/bin/fx_crash.exe dist/crashing/Game.exe
+      - name: Healthy build passes
+        id: healthy
+        uses: ./
+        with:
+          build: dist/healthy
+          exe: Game.exe
+          observe-secs: "12"
+          artifact-name: action-healthy
+      - name: Crashing build is caught
+        id: crashing
+        continue-on-error: true
+        uses: ./
+        with:
+          build: dist/crashing
+          exe: Game.exe
+          observe-secs: "12"
+          artifact-name: action-crashing
+      - name: Assert outcomes
+        env:
+          HEALTHY: ${{ steps.healthy.outputs.verdict }}
+          CRASHING: ${{ steps.crashing.outputs.verdict }}
+          CRASHING_OUTCOME: ${{ steps.crashing.outcome }}
+          RESULTS: ${{ steps.healthy.outputs.results }}
+        run: |
+          echo "healthy=$HEALTHY crashing=$CRASHING crashing-step=$CRASHING_OUTCOME"
+          [[ "$HEALTHY" == pass && "$CRASHING" == fail && "$CRASHING_OUTCOME" == failure ]]
+          python3 - "$RESULTS/report.json" <<'EOF'
+          import json, sys
+          r = json.load(open(sys.argv[1]))
+          assert r["summary"]["verdict"] == "pass", r["summary"]
+          assert all(run["capture_verified"] for run in r["runs"]), r["runs"]
+          print("healthy report ok:", r["summary"]["counts"])
+          EOF
+      - name: Game had no network and no token
+        env:
+          RESULTS: ${{ steps.healthy.outputs.results }}
+        run: |
+          ! grep -rl "ghs_\|GITHUB_TOKEN\|ACTIONS_RUNTIME" "$RESULTS"
+      - name: Report for the PR comment job
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: comment-report
+          path: ${{ steps.crashing.outputs.results }}/report.json
+          retention-days: 3
+
+  comment:
+    # Never runs the game build: it only reads report.json.
+    name: PR comment
+    needs: action
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write # post or update the report comment on this PR
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: comment-report
+          path: ${{ runner.temp }}/report
+      - uses: ./comment
+        with:
+          report: ${{ runner.temp }}/report/report.json
+          pr-number: ${{ github.event.pull_request.number }}
