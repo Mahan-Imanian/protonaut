@@ -89,6 +89,8 @@ jobs:
           echo "${ACTIONLINT_SHA256}  actionlint.tar.gz" | sha256sum -c -
           tar -xzf actionlint.tar.gz actionlint
           ./actionlint -color
+      - name: shellcheck on composite actions
+        run: python3 scripts/shellcheck-actions.py
       - name: zizmor
         run: pipx run "zizmor==${ZIZMOR_VERSION}" --persona=auditor --format=plain .
 

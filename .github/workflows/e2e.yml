@@ -136,7 +136,7 @@ jobs:
         env:
           RESULTS: ${{ steps.healthy.outputs.results }}
         run: |
-          ! grep -rl "ghs_\|GITHUB_TOKEN\|ACTIONS_RUNTIME" "$RESULTS"
+          if grep -rl "ghs_\|GITHUB_TOKEN\|ACTIONS_RUNTIME" "$RESULTS"; then echo "::error::token-like text in results"; exit 1; fi
       - name: Package the sandbox probe
         run: |
           mkdir -p dist/probe
@@ -163,10 +163,11 @@ jobs:
           if pgrep -u spf-sandbox -a; then echo "::error::sandbox processes survived the action"; exit 1; fi
           # The sandbox user has no sudo rights, is not in the docker group
           # (the docker socket is root-equivalent) and cannot write the runtimes.
-          ! sudo -l -U spf-sandbox | grep -q "may run"
-          ! id -nG spf-sandbox | grep -qw docker
-          ! sudo -u spf-sandbox test -w /var/tmp/steamos-preflight/cache/runtimes
-          ! sudo -u spf-sandbox find /var/tmp/steamos-preflight/cache -writable -print -quit | grep -q .
+          fail() { echo "::error::$1"; exit 1; }
+          if sudo -l -U spf-sandbox | grep -q "may run"; then fail "spf-sandbox has sudo rights"; fi
+          if id -nG spf-sandbox | grep -qw docker; then fail "spf-sandbox is in the docker group"; fi
+          if sudo -u spf-sandbox test -w /var/tmp/steamos-preflight/cache/runtimes; then fail "spf-sandbox can write the runtime cache"; fi
+          if sudo -u spf-sandbox find /var/tmp/steamos-preflight/cache -writable -print -quit | grep -q .; then fail "a runtime file is writable by spf-sandbox"; fi
           echo "sandbox probe: all blocked, no surviving processes"
       - name: Report for the PR comment job
         if: always()
