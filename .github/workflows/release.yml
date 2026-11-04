@@ -1,4 +1,5 @@
-# On a version tag: build the Linux binary, write checksums and an SBOM, and
+# On a version tag: build the Linux binary, write checksums and dependency
+# metadata (cargo metadata, not a standard SBOM format), and
 # create a DRAFT release. A maintainer reviews and publishes it by hand.
 name: Release
 
