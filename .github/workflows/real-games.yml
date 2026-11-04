@@ -168,6 +168,9 @@ jobs:
         run: |
           cd demos/3d/platformer
           printf '\n[rendering]\n\nrendering_device/driver.windows="%s"\n' "$DRIVER" >> project.godot
+          # Godot's own log names the driver and device it actually used; it
+          # is written next to the build copy the action runs.
+          printf '\n[debug]\n\nfile_logging/enable_file_logging.pc=true\nfile_logging/log_path="Z:/var/tmp/steamos-preflight/build/godot.log"\n' >> project.godot
           cat > export_presets.cfg <<'EOF'
           [preset.0]
           name="Windows Desktop"
@@ -197,6 +200,18 @@ jobs:
           observe-secs: "40"
           artifact-name: real-godot-${{ matrix.driver }}
           fail-job: "false"
+      - name: Which renderer did Godot use
+        env:
+          DRIVER: ${{ matrix.driver }}
+        run: |
+          # The log of the last runtime run (GE-Proton10-34); each run starts
+          # the game afresh and the file is overwritten.
+          sudo cat /var/tmp/steamos-preflight/build/godot.log | head -n 12 | tee godot-head.txt
+          case "$DRIVER" in
+            vulkan) grep -q "^Vulkan .* Using Device" godot-head.txt ;;
+            d3d12) grep -q "^D3D12 .* Using Device" godot-head.txt ;;
+          esac
+          echo "Godot used the $DRIVER driver"
       - name: Summarise
         env:
           RESULTS: ${{ steps.run.outputs.results }}
