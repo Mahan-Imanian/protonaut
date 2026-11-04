@@ -7,7 +7,9 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 use preflight_core::model::RunOutcome;
-use preflight_core::observe::{LogFindings, RunObservation, Screenshot, WindowSeen, analyse_log};
+use preflight_core::observe::{
+    LogFindings, RunObservation, ScreenText, Screenshot, WindowSeen, analyse_log, representative,
+};
 use preflight_core::report::redact;
 use tokio::process::Command;
 
@@ -250,6 +252,7 @@ impl ProtonBackend<'_> {
                         vec![],
                         LogFindings::default(),
                         None,
+                        ScreenText::NotRead("The game never started.".into()),
                     ),
                     vulkan_device: device,
                 });
@@ -320,6 +323,24 @@ impl ProtonBackend<'_> {
         fs::write(&log_out, &text).map_err(|e| RuntimeError::io(&log_out, e))?;
         let findings = analyse_log(&text);
         let (outcome, code) = classify(exit, &findings);
+        let screen_text = if !capture_verified {
+            ScreenText::NotRead("Screen capture is not verified for this runtime.".into())
+        } else {
+            match representative(&screenshots) {
+                None => ScreenText::NotRead("No screenshot was taken.".into()),
+                Some(shot) => {
+                    match capture::read_text(&req.results.join(&shot.path), &sandbox).await {
+                        Ok(t) => ScreenText::Read {
+                            path: shot.path.clone(),
+                            text: redact(&t, req.redactions),
+                        },
+                        Err(e) => ScreenText::NotRead(format!(
+                            "OCR did not run ({e}); install tesseract-ocr."
+                        )),
+                    }
+                }
+            }
+        };
         Ok(RunOutput {
             observation: self.observation(
                 req,
@@ -331,6 +352,7 @@ impl ProtonBackend<'_> {
                 screenshots,
                 findings,
                 Some(log_rel),
+                screen_text,
             ),
             vulkan_device: device,
         })
@@ -348,6 +370,7 @@ impl ProtonBackend<'_> {
         screenshots: Vec<Screenshot>,
         log: LogFindings,
         log_path: Option<String>,
+        screen_text: ScreenText,
     ) -> RunObservation {
         RunObservation {
             runtime: self.id().to_owned(),
@@ -365,6 +388,7 @@ impl ProtonBackend<'_> {
                 self.display.resolution.width,
                 self.display.resolution.height,
             ),
+            screen_text,
         }
     }
 }

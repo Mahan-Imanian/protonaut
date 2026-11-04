@@ -80,7 +80,7 @@ runs:
         sudo apt-get update -qq
         sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
           xserver-xorg-core xserver-xorg-video-dummy x11-xserver-utils x11-utils \
-          imagemagick mesa-vulkan-drivers python3 curl util-linux >/dev/null
+          imagemagick mesa-vulkan-drivers python3 curl util-linux tesseract-ocr tesseract-ocr-eng >/dev/null
 
     - name: Build steamos-preflight
       shell: bash

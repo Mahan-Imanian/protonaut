@@ -129,6 +129,74 @@ pub struct RunObservation {
     /// Relative path of the saved, redacted runtime log.
     pub log_path: Option<String>,
     pub display: (u32, u32),
+    pub screen_text: ScreenText,
+}
+
+/// Text read by OCR from the frame that represents the run.
+#[derive(Debug, Clone, PartialEq)]
+pub enum ScreenText {
+    /// OCR did not run; the reason is reported.
+    NotRead(String),
+    /// `path` is relative to the results directory.
+    Read { path: String, text: String },
+}
+
+/// The last frame that is not black, else the last frame.
+pub fn representative(shots: &[Screenshot]) -> Option<&Screenshot> {
+    shots
+        .iter()
+        .rev()
+        .find(|s| !s.stats.is_black())
+        .or_else(|| shots.last())
+}
+
+const ERROR_WORDS: &[&str] = &[
+    "error",
+    "errors",
+    "fatal",
+    "fail",
+    "failed",
+    "failure",
+    "missing",
+    "crash",
+    "crashed",
+    "exception",
+    "unsupported",
+    "cannot",
+    "can't",
+    "couldn't",
+];
+const ERROR_PHRASES: &[&str] = &[
+    "not found",
+    "could not",
+    "not supported",
+    "could be found",
+    "no compatible",
+];
+const MAX_ERROR_LINES: usize = 5;
+
+/// Lines of OCR text that read like an error message, whitespace-collapsed
+/// and truncated. Whole-word matching only, so "terror" or "failsafe" do not
+/// count.
+pub fn error_lines(text: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    for line in text.lines() {
+        let clean = line.split_whitespace().collect::<Vec<_>>().join(" ");
+        if clean.is_empty() {
+            continue;
+        }
+        let lower = clean.to_lowercase();
+        let words: Vec<&str> = lower
+            .split(|c: char| !(c.is_alphanumeric() || c == '\''))
+            .filter(|w| !w.is_empty())
+            .collect();
+        let hit = words.iter().any(|w| ERROR_WORDS.contains(w))
+            || ERROR_PHRASES.iter().any(|p| words.join(" ").contains(p));
+        if hit && out.len() < MAX_ERROR_LINES {
+            out.push(clean.chars().take(160).collect());
+        }
+    }
+    out
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -218,6 +286,37 @@ mod tests {
             (5, 5, 0, 0)
         );
         assert!(!s.is_black());
+    }
+
+    // OCR output captured from real runs: OpenTTD 15.3 without its base
+    // graphics, OpenTTD with software rendering, and a Godot 3D scene.
+    const OCR_OPENTTD_NOGFX: &str = "WISSING Grapnics\nOpenTTD requires graphics to function but none could be found. Do you allow\nOpenTTD to download and install these graphics?\nYes, download the graphics No, quit OpenTTD";
+    const OCR_OPENTTD_VIDEO: &str = "Play EY Scenario\nPeUCIPAlE IT AULOTT ated SUTVEY 7 = Message = SoV +4\nte \u{201c}I wy Error with video settings... en Ek a te.";
+
+    #[test]
+    fn real_in_game_error_messages_are_found() {
+        let nogfx = error_lines(OCR_OPENTTD_NOGFX);
+        assert_eq!(nogfx.len(), 1, "{nogfx:?}");
+        assert!(nogfx[0].contains("none could be found"));
+        let video = error_lines(OCR_OPENTTD_VIDEO);
+        assert_eq!(video.len(), 1, "{video:?}");
+        assert!(video[0].contains("Error with video settings"));
+    }
+
+    #[test]
+    fn ordinary_text_and_partial_words_are_not_errors() {
+        assert!(error_lines("").is_empty());
+        assert!(error_lines("New Game\nPlay Scenario\nOptions\nQuit").is_empty());
+        assert!(error_lines("Terror of the Deep\nfailsafe mode\nmissingno").is_empty());
+        assert_eq!(error_lines("Can't connect: Server not found").len(), 1);
+    }
+
+    #[test]
+    fn error_lines_are_capped() {
+        assert_eq!(
+            error_lines(&"fatal error\n".repeat(20)).len(),
+            MAX_ERROR_LINES
+        );
     }
 
     #[test]

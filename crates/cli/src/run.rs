@@ -398,10 +398,7 @@ fn print_summary(report: &Report, results: &Path, json: bool) -> Result<(), CliE
     let n = &report.summary.counts;
     println!(
         "\n{}: {} pass, {} fail, {} warning, {} unknown, {} not tested. Report: {}",
-        match report.summary.verdict {
-            Verdict::Pass => "PASSED",
-            Verdict::Fail => "FAILED",
-        },
+        preflight_core::report::headline(report),
         n.pass,
         n.fail,
         n.warning,
