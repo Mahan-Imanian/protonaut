@@ -122,10 +122,21 @@ jobs:
           assert fill["status"] == "WARNING" and "960x600 window" in fill["summary"], fill
           print("OpenTTD expectations hold")
           EOF
-          # The build without base graphics is a known false negative: OpenTTD
-          # draws its "Missing graphics" message inside its own window, which
-          # no current check reads. It is run to keep that gap visible in the
-          # summary above, not asserted. See docs/roadmap.md.
+      - name: Missing base graphics is not a clean pass
+        env:
+          NOGFX: ${{ steps.nogfx.outputs.results }}
+        run: |
+          # Regression: OpenTTD without graphics keeps running and shows
+          # "Missing graphics ... none could be found" inside its window.
+          python3 - "$NOGFX/report.json" <<'EOF'
+          import json, sys
+          r = json.load(open(sys.argv[1]))
+          c = next(c for c in r["checks"] if c["id"] == "SP-DISP-005")
+          assert c["status"] == "WARNING", c
+          assert any("could be found" in d for d in c.get("details", [])), c
+          assert r["summary"]["counts"]["warning"] >= 1
+          print("missing graphics reported:", c["details"])
+          EOF
 
   godot:
     name: Godot 4.7.2 platformer (${{ matrix.driver }})

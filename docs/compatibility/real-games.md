@@ -27,8 +27,9 @@ for the Direct3D 12 export and `Vulkan 1.4.318 - Forward+ - Using Device #0:
 | Runtime stability | Running after 40 s | Running after 40 s | Yes |
 | Window creation | 960x600 window | 1152x648 window | Yes; both reported as windowed, not letterboxed (after a fix found by this test) |
 | Rendering | Title screen with real graphics (GE-Proton11-12) | Textured 3D level with shadows and the character (GE-Proton11-12) | Yes. Under GE-Proton10-34 capture does not work, and the screenshot checks were `NOT_TESTED` as designed |
-| Asset loading | Base graphics loaded; title savegame shown | Packed resources loaded | Yes for the complete builds; **no** for the broken build below |
+| Asset loading | Base graphics loaded; title savegame shown | Packed resources loaded | Yes for the complete builds; the broken build below is flagged by SP-DISP-005 |
 | Imported DLLs | 14, all resolved | 31, all resolved | Yes; OpenTTD's list matches `objdump` exactly |
+| In-window error text | "Missing graphics" (build without graphics) | None | Yes, SP-DISP-005 WARNING since 0.1.0 |
 | Dialogs | A "Fatal Application Failure" window under GE-Proton10-34 only, flagged by SP-DISP-004 | None | Yes; cause not identified (same Wine log errors under both runtimes) |
 
 ![OpenTTD title screen](../images/real-openttd.png)
@@ -40,17 +41,17 @@ for the Direct3D 12 export and `Vulkan 1.4.318 - Forward+ - Using Device #0:
    SP-DISP-003 now reports a window smaller than the display as such.
 2. **Fixed:** on a cold start the capture control could miss DXVK's first
    frame and mark capture as not working. The control is now retried.
-3. **Open, documented:** OpenTTD **without** its base graphics set shows
-   "Missing graphics: OpenTTD requires graphics to function" inside its own
-   window and keeps running. SteamOS Preflight reported this broken build
-   as passing. Messages a game draws inside its own window are not read by
-   any current check; see [the roadmap](../roadmap.md).
-4. **Open, documented:** with software rendering OpenTTD shows "no compatible
-   GPU found. Hardware acceleration disabled". Valve's review fails games
-   that warn about the GPU, but on a Steam Deck this message would most
-   likely not appear, and SteamOS Preflight did not report it either way.
+3. **Fixed:** OpenTTD **without** its base graphics set shows "Missing
+   graphics: OpenTTD requires graphics to function" inside its own window
+   and keeps running; it used to be reported as a clean pass. SP-DISP-005
+   now reads the screen with OCR and reports it as a WARNING quoting the
+   message, and the workflow asserts this on every run.
+4. **Environment-specific:** with software rendering OpenTTD shows "Error
+   with video settings... no compatible GPU found". OCR may report it as a
+   WARNING; on a Steam Deck with a real GPU the message would most likely
+   not appear.
 
-![OpenTTD without base graphics, reported as passing](../images/real-openttd-nogfx.png)
+![OpenTTD without base graphics: now reported as a warning](../images/real-openttd-nogfx.png)
 
 ## Not covered by these games
 

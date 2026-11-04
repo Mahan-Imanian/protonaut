@@ -18,11 +18,11 @@ be automated on a CI runner, not built yet. *Hardware*: needs a real device.
 | Proton: middleware it does not support (anti-cheat) | SP-AC-001 flags known anti-cheat files | Heuristic | Detection only; cannot know whether the vendor's Proton support is enabled |
 | Proton: middleware (media codecs) | SP-MEDIA-001 flags formats usually decoded by Media Foundation | Heuristic | Static only; playback is not verified at runtime |
 | **Display: supported resolution (1280x800 or 1280x720)** | Runs at 1280x800; SP-DISP-003 reports a game window smaller than the display (observed) or black bars (heuristic) | Partly verified | Window size verified with OpenTTD (960x600) and Godot (1152x648). Whether the game's own resolution setting defaults correctly is not read |
-| Display: smallest text ≥ 9 px at 1280x800 | SP-HW-003, always NOT_TESTED | Missing | Needs OCR on the screenshots |
+| Display: smallest text ≥ 9 px at 1280x800 | SP-HW-003, always NOT_TESTED | Missing | OCR now runs (SP-DISP-005), but text height is not measured |
 | **Input: full controller support in the default configuration** | SP-HW-002, always NOT_TESTED | Missing | Needs injected gamepad input and a check that the game reacts |
 | Input: controller glyphs match the device | SP-STEAM-001 reports Steam Input flat-API imports | Heuristic | `UNKNOWN` for interface-based Steam Input and for engines that load it from a plugin. Glyphs on screen are not read |
 | Input: text entry opens the on-screen keyboard | SP-STEAM-002 reports the Steamworks text-input imports | Heuristic | Same limits as above |
-| **Seamlessness: no "unsupported OS/GPU" warnings** | SP-DISP-004 flags small OS-level windows | Heuristic, partly verified | Caught a real "Fatal Application Failure" window (OpenTTD under GE-Proton10-34). **Misses messages a game draws inside its own window**, such as OpenTTD's in-game "no compatible GPU found" (shown because of software rendering) |
+| **Seamlessness: no "unsupported OS/GPU" warnings** | SP-DISP-004 flags small OS-level windows; SP-DISP-005 reads the screen with OCR and flags error language | Heuristic, partly verified | SP-DISP-004 caught a real "Fatal Application Failure" window (OpenTTD under GE-Proton10-34). SP-DISP-005 catches OpenTTD's in-window "Missing graphics" message and a fixture's in-window fatal error; it reads only words, so a warning with stylised text or an icon-only message can be missed |
 | Seamlessness: launchers are controller-navigable | SP-LAUNCH-001 flags launcher-like executables | Heuristic | Launcher navigation is not tested |
 | **Performance: 30 fps at default settings** | SP-HW-001, always NOT_TESTED | Hardware | CPU software rendering says nothing about Deck or Steam Machine frame rates |
 
@@ -30,15 +30,17 @@ Beyond Valve's list, SteamOS Preflight also checks PE architecture
 (SP-PE-002), unresolved DLL imports (SP-PE-003, verified exactly against
 `objdump` for OpenTTD's 14 imports) and case-colliding files (SP-FS-001).
 
-## Known false negative found by real-game testing
+## Errors a game draws inside its own window
 
 OpenTTD without its base graphics set shows "Missing graphics: OpenTTD
-requires graphics to function" **inside its own window** and keeps running.
-SteamOS Preflight reported the run as passing: every current runtime check
-is satisfied (process alive, window present, frame not black). Any game
-that reports a fatal problem in its own UI instead of crashing or opening an
-OS dialog is missed the same way. This is the main reason for items 1 and 2
-below.
+requires graphics to function" **inside its own window** and keeps running,
+so every process and window check passes. Before 0.1.0 this was reported as
+a clean pass. SP-DISP-005 now reads the representative frame with Tesseract
+OCR and reports error language as a WARNING, and the summary reads "No
+failures, N warnings to review" instead of a plain pass. OCR is a
+heuristic: stylised fonts, very small text or a message shown only before
+the capture can still be missed, which is why a screenshot comparison is
+item 1 below.
 
 ## Roadmap, in priority order
 
@@ -47,9 +49,9 @@ below.
    would have caught the missing-graphics build, works for any engine, and
    needs no game-specific knowledge. Open question: animated title screens
    need a tolerant comparison or a fixed capture time.
-2. **OCR on screenshots.** Measure the smallest text height (Valve's 9 px
-   rule) and flag words such as "error", "missing", "unsupported" or "GPU".
-   Heuristic by nature; would have caught both OpenTTD messages above.
+2. **Text height from OCR.** SP-DISP-005 already runs OCR for error
+   language; measuring the smallest text height would cover Valve's 9 px
+   rule.
 3. **Game arguments in the action** (already in the CLI), so studios can
    start a test map or a benchmark mode directly.
 4. **Scripted controller input.** A virtual gamepad (Linux `uinput`) driven
