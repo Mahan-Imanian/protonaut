@@ -63,6 +63,11 @@ heuristic. Missing evidence is never reported as a pass. The full list is in
 behaviour, controller feel, touch input, suspend and resume, battery use,
 and anything that needs the Steam client. Those still need a device.
 
+![HTML report from a real run: a letterboxed frame flagged as a warning, with the captured screenshot](docs/images/report.png)
+
+*`report.html` from the letterbox fixture under two runtimes. GE-Proton10-34
+shows "Capture: not working", so its screenshot checks are `NOT_TESTED`.*
+
 ## How it works
 
 1. Your build runs under a pinned, checksum-verified
