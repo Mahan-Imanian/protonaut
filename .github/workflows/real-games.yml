@@ -29,6 +29,13 @@ env:
   OPENTTD_SHA256: 61c0a6a43d81008c7ff4330fb56351bbf66a980cdad041f1d0e08b51f2eeb34c
   OPENGFX_URL: https://cdn.openttd.org/opengfx-releases/8.0/opengfx-8.0-all.zip
   OPENGFX_SHA256: 43a0c1dabf39cb865394f3a6cc36d4da5c10ecfaaf55652043104806810903be
+  # Godot 4.7.2 (MIT) and its Windows export templates; SHA-512 values from
+  # the release's SHA512-SUMS.txt. The game is the 3D platformer from the
+  # official godot-demo-projects repository (MIT), pinned to a commit.
+  GODOT_BASE: https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable
+  GODOT_ZIP_SHA512: 9aa00f7a605200940bce3027a567b782f49bd8e940dd06ae9e987bd65aee1b1467edd56ed84fcdcbdd44354bf613bdbb4e5d2913e925850368e150c59ed54c65
+  GODOT_TPZ_SHA512: ca4d71c4d7b81dfc15d1a98baa07534aa95b03fdda78a0075b06672e1648d2e5f40980c9adc28d23e1b92e732ee7bf3461997aa804af74ec2fcd7a93ccb84079
+  DEMOS_COMMIT: b761b4cd5718a7118f2c95eb55f181d0a5f004f1
 
 jobs:
   openttd:
@@ -119,3 +126,91 @@ jobs:
           # draws its "Missing graphics" message inside its own window, which
           # no current check reads. It is run to keep that gap visible in the
           # summary above, not asserted. See docs/roadmap.md.
+
+  godot:
+    name: Godot 4.7.2 platformer (${{ matrix.driver }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        driver: [vulkan, d3d12]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/godot-dl
+          key: godot-4.7.2-${{ env.GODOT_TPZ_SHA512 }}
+      - name: Download and verify Godot
+        run: |
+          mkdir -p "$RUNNER_TEMP/godot-dl" && cd "$RUNNER_TEMP/godot-dl"
+          [[ -f godot.zip ]] || curl -sSfL -o godot.zip "$GODOT_BASE/Godot_v4.7.2-stable_linux.x86_64.zip"
+          [[ -f templates.tpz ]] || curl -sSfL -o templates.tpz "$GODOT_BASE/Godot_v4.7.2-stable_export_templates.tpz"
+          echo "$GODOT_ZIP_SHA512  godot.zip" | sha512sum -c -
+          echo "$GODOT_TPZ_SHA512  templates.tpz" | sha512sum -c -
+          unzip -q -o godot.zip -d "$RUNNER_TEMP/godot"
+          mkdir -p ~/.local/share/godot/export_templates
+          unzip -q -o templates.tpz -d "$RUNNER_TEMP/tpl"
+          rm -rf ~/.local/share/godot/export_templates/4.7.2.stable
+          mv "$RUNNER_TEMP/tpl/templates" ~/.local/share/godot/export_templates/4.7.2.stable
+      - name: Fetch the demo at a fixed commit
+        run: |
+          git init -q demos && cd demos
+          git remote add origin https://github.com/godotengine/godot-demo-projects.git
+          git fetch -q --depth 1 --filter=blob:none origin "$DEMOS_COMMIT"
+          git sparse-checkout set 3d/platformer
+          git checkout -q FETCH_HEAD
+      - name: Export for Windows
+        env:
+          DRIVER: ${{ matrix.driver }}
+        run: |
+          cd demos/3d/platformer
+          printf '\n[rendering]\n\nrendering_device/driver.windows="%s"\n' "$DRIVER" >> project.godot
+          cat > export_presets.cfg <<'EOF'
+          [preset.0]
+          name="Windows Desktop"
+          platform="Windows Desktop"
+          runnable=true
+          export_filter="all_resources"
+          export_path="Platformer.exe"
+
+          [preset.0.options]
+          binary_format/embed_pck=true
+          binary_format/architecture="x86_64"
+          application/modify_resources=false
+          codesign/enable=false
+          EOF
+          godot="$(ls "$RUNNER_TEMP"/godot/Godot_v4.7.2-stable_linux.x86_64)"
+          "$godot" --headless --path . --import >/dev/null 2>&1 || true
+          mkdir -p "$GITHUB_WORKSPACE/dist/godot"
+          "$godot" --headless --path . --export-release "Windows Desktop" "$GITHUB_WORKSPACE/dist/godot/Platformer.exe"
+          ls -la "$GITHUB_WORKSPACE/dist/godot"
+      - name: Run under the action
+        id: run
+        uses: ./
+        with:
+          build: dist/godot
+          exe: Platformer.exe
+          runtimes: ge-proton11-12 ge-proton10-34
+          observe-secs: "40"
+          artifact-name: real-godot-${{ matrix.driver }}
+          fail-job: "false"
+      - name: Summarise
+        env:
+          RESULTS: ${{ steps.run.outputs.results }}
+        run: |
+          python3 - "$RESULTS/report.json" <<'EOF'
+          import json, sys
+          r = json.load(open(sys.argv[1]))
+          print("==", r["summary"])
+          for run in r["runs"]:
+              print("  run", run)
+          for c in r["checks"]:
+              if c["category"] != "hardware":
+                  print(f"  {c['status']:<10} {c['id']:<13} {c.get('runtime') or 'static':<15} {c['summary']}")
+                  for d in c.get("details", [])[:5]:
+                      print("        ", d)
+          EOF
+          grep -ahiE "d3d12|vulkan|driver|fallback|error" "$RESULTS"/runs/*/runtime.log | grep -v "^info:" | head -30 || true
