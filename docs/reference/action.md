@@ -29,7 +29,7 @@ Runs on `ubuntu-24.04` (x86-64 Linux runners only).
 |---|---|
 | `verdict` | `pass`, `fail`, or `error` when the test could not run |
 | `exit-code` | `steamos-preflight test` exit code (see [cli.md](cli.md)) |
-| `results` | Absolute path of the results directory |
+| `results` | Absolute path of this invocation's results directory (unique per use, so several uses in one job do not overwrite each other) |
 
 The step fails when the verdict is `fail` or the test could not run. GitHub
 drops the outputs of a composite action that fails, so when a later step
