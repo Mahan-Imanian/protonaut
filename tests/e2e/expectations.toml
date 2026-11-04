@@ -1,0 +1,46 @@
+# Expected results for each fixture under a runtime whose screen capture is
+# verified. Checks not listed are not asserted. Under a runtime where capture
+# is not verified, scripts/e2e.py expects SP-DISP-002 and SP-DISP-003 to be
+# NOT_TESTED instead, whatever is written here; SP-DISP-005 likewise.
+
+[fixture.fx_scene]
+verdict = "pass"
+checks = { "SP-RUN-001" = "PASS", "SP-RUN-002" = "PASS", "SP-RUN-003" = "PASS", "SP-DISP-001" = "PASS", "SP-DISP-002" = "PASS", "SP-DISP-003" = "PASS", "SP-DISP-004" = "PASS", "SP-HW-001" = "NOT_TESTED" }
+
+[fixture.fx_scene32]
+verdict = "pass"
+checks = { "SP-PE-002" = "PASS", "SP-RUN-001" = "PASS", "SP-RUN-002" = "PASS", "SP-RUN-003" = "PASS", "SP-DISP-001" = "PASS", "SP-DISP-002" = "PASS", "SP-DISP-003" = "PASS", "SP-DISP-004" = "PASS" }
+
+[fixture.fx_black]
+verdict = "pass"
+checks = { "SP-RUN-002" = "PASS", "SP-DISP-001" = "PASS", "SP-DISP-002" = "WARNING", "SP-DISP-003" = "UNKNOWN" }
+
+[fixture.fx_crash]
+verdict = "fail"
+checks = { "SP-RUN-001" = "PASS", "SP-RUN-002" = "FAIL", "SP-RUN-003" = "FAIL", "SP-DISP-001" = "PASS" }
+
+[fixture.fx_exit_fail]
+verdict = "fail"
+checks = { "SP-RUN-002" = "FAIL", "SP-RUN-003" = "PASS", "SP-DISP-001" = "UNKNOWN" }
+
+[fixture.fx_missing_asset]
+verdict = "fail"
+checks = { "SP-RUN-002" = "FAIL", "SP-DISP-001" = "UNKNOWN" }
+
+[fixture.fx_letterbox]
+verdict = "pass"
+checks = { "SP-RUN-002" = "PASS", "SP-DISP-002" = "PASS", "SP-DISP-003" = "WARNING" }
+
+[fixture.fx_dialog]
+verdict = "pass"
+checks = { "SP-RUN-002" = "PASS", "SP-DISP-004" = "WARNING" }
+
+[fixture.fx_text_error]
+# Alive, windowed and drawing, but showing a fatal message: must not be a
+# clean pass.
+verdict = "pass"
+checks = { "SP-RUN-002" = "PASS", "SP-DISP-001" = "PASS", "SP-DISP-002" = "PASS", "SP-DISP-005" = "WARNING" }
+
+[fixture.fx_missing_dll]
+verdict = "fail"
+checks = { "SP-PE-003" = "FAIL", "SP-RUN-001" = "FAIL" }

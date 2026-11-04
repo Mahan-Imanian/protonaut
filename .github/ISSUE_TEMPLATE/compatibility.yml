@@ -1,0 +1,23 @@
+name: Compatibility report
+description: Results differ from what a real Steam Deck or SteamOS device shows.
+labels: [compatibility]
+body:
+  - type: textarea
+    id: report
+    attributes:
+      label: The relevant checks from report.json
+      description: Remove anything private. Include the runtime and check ids.
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: device
+    attributes:
+      label: What happened on the real device
+      description: Device, SteamOS version, Proton version, and what you saw.
+    validations:
+      required: true
+  - type: input
+    id: engine
+    attributes:
+      label: Engine and version (optional)

@@ -1,0 +1,67 @@
+name: SteamOS Preflight PR comment
+description: Post or update a pull-request comment from a SteamOS Preflight report.json. Run it in a job that does not execute the game build.
+
+inputs:
+  report:
+    description: Path to report.json (for example from actions/download-artifact).
+    required: true
+  pr-number:
+    description: Pull request number to comment on.
+    required: true
+  github-token:
+    description: Token with pull-requests write access.
+    default: ${{ github.token }}
+  comment-author:
+    description: Login that posts the comment; only its own comments are updated. Change it when github-token is not the default GITHUB_TOKEN.
+    default: github-actions[bot]
+  artifact-url:
+    description: Link to the workflow run's artifacts, shown in the comment.
+    default: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+runs:
+  using: composite
+  steps:
+    - name: Build steamos-preflight
+      shell: bash
+      env:
+        ACTION_DIR: ${{ github.action_path }}/..
+      run: |
+        set -euo pipefail
+        if ! command -v steamos-preflight >/dev/null; then
+          cd "$ACTION_DIR"
+          cargo build --locked --release --quiet
+          sudo install -m 0755 target/release/steamos-preflight /usr/local/bin/steamos-preflight
+        fi
+
+    - name: Render and post
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        REPORT: ${{ inputs.report }}
+        PR: ${{ inputs.pr-number }}
+        ARTIFACT_URL: ${{ inputs.artifact-url }}
+        AUTHOR: ${{ inputs.comment-author }}
+      run: |
+        set -euo pipefail
+        [[ "$PR" =~ ^[0-9]+$ ]] || { echo "::error::pr-number must be a number"; exit 2; }
+        body="$RUNNER_TEMP/steamos-preflight-comment.md"
+        # report.json comes from a job that ran untrusted code: the CLI
+        # validates it against the schema and escapes every string.
+        steamos-preflight report "$REPORT" --format markdown --artifact-url "$ARTIFACT_URL" --out "$body"
+        marker='<!-- steamos-preflight-report -->'
+        # The author is an input, not looked up: the default GITHUB_TOKEN
+        # cannot call /user, and `gh api` prints the error body on stdout.
+        [[ "$AUTHOR" =~ ^[A-Za-z0-9-]+(\[bot\])?$ ]] || { echo "::error::comment-author is not a GitHub login"; exit 2; }
+        existing=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR/comments" \
+          --jq ".[] | select(.user.login == \"$AUTHOR\" and (.body | startswith(\"$marker\"))) | .id" | head -n1 || true)
+        if [[ -n "$existing" ]]; then
+          if ! gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing" -F body=@"$body" >/dev/null; then
+            echo "::warning::could not update the comment (read-only token on a fork PR?)"; exit 0
+          fi
+          echo "updated comment $existing"
+        else
+          if ! gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F body=@"$body" >/dev/null; then
+            echo "::warning::could not post a comment (read-only token on a fork PR?)"; exit 0
+          fi
+          echo "posted a new comment"
+        fi

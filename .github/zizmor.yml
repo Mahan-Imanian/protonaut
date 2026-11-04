@@ -1,0 +1,8 @@
+# zizmor configuration. Every ignore needs a reason.
+rules:
+  self-repository:
+    ignore:
+      # These workflows deliberately run `uses: ./` and `uses: ./comment` so
+      # they test the exact checked-out code of this commit.
+      - e2e.yml
+      - real-games.yml

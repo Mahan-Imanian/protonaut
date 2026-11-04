@@ -1,0 +1,367 @@
+{
+  "$defs": {
+    "Category": {
+      "enum": [
+        "static",
+        "runtime",
+        "display",
+        "hardware"
+      ],
+      "type": "string"
+    },
+    "CheckResult": {
+      "properties": {
+        "artifacts": {
+          "description": "Paths relative to the results directory.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "category": {
+          "$ref": "#/$defs/Category"
+        },
+        "details": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "evidence": {
+          "$ref": "#/$defs/Evidence"
+        },
+        "id": {
+          "description": "Stable identifier, for example `SP-PE-002`. Never reused for a\ndifferent meaning.",
+          "type": "string"
+        },
+        "runtime": {
+          "description": "Runtime the check ran under; absent for static checks.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "$ref": "#/$defs/Status"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "category",
+        "status",
+        "evidence",
+        "summary"
+      ],
+      "type": "object"
+    },
+    "EnvironmentInfo": {
+      "properties": {
+        "display": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "kernel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "os": {
+          "type": "string"
+        },
+        "vulkan_device": {
+          "description": "Vulkan device the runtime rendered on, when observed.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "os"
+      ],
+      "type": "object"
+    },
+    "Evidence": {
+      "description": "How the result was obtained. A heuristic result is never presented as\ndeterministic validation.",
+      "oneOf": [
+        {
+          "const": "static",
+          "description": "Deterministic inspection of the build files.",
+          "type": "string"
+        },
+        {
+          "const": "observed",
+          "description": "Directly observed while running the build.",
+          "type": "string"
+        },
+        {
+          "const": "heuristic",
+          "description": "Image analysis or pattern matching that can be wrong.",
+          "type": "string"
+        },
+        {
+          "const": "none",
+          "description": "No evidence was gathered.",
+          "type": "string"
+        }
+      ]
+    },
+    "RunOutcome": {
+      "oneOf": [
+        {
+          "const": "survived",
+          "description": "Still running when the observation window ended.",
+          "type": "string"
+        },
+        {
+          "const": "exited_cleanly",
+          "description": "Exited with code 0 before the window ended.",
+          "type": "string"
+        },
+        {
+          "const": "exited_with_error",
+          "description": "Exited with a nonzero code.",
+          "type": "string"
+        },
+        {
+          "const": "crashed",
+          "description": "Terminated by an unhandled exception or signal.",
+          "type": "string"
+        },
+        {
+          "const": "launch_failed",
+          "description": "The runtime itself could not start the build.",
+          "type": "string"
+        }
+      ]
+    },
+    "RunSummary": {
+      "properties": {
+        "capture_verified": {
+          "description": "Whether the control fixture's frame was captured correctly under this\nruntime. Screenshot checks are only trusted when this is true.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "duration_ms": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "exit_code": {
+          "format": "int32",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "outcome": {
+          "$ref": "#/$defs/RunOutcome"
+        },
+        "runtime": {
+          "type": "string"
+        },
+        "runtime_version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "runtime",
+        "runtime_version",
+        "outcome",
+        "duration_ms"
+      ],
+      "type": "object"
+    },
+    "Status": {
+      "oneOf": [
+        {
+          "const": "FAIL",
+          "description": "The failure was directly observed.",
+          "type": "string"
+        },
+        {
+          "const": "WARNING",
+          "description": "A potential problem that needs a human to investigate.",
+          "type": "string"
+        },
+        {
+          "const": "UNKNOWN",
+          "description": "The check ran but the evidence was insufficient for a verdict.",
+          "type": "string"
+        },
+        {
+          "const": "NOT_TESTED",
+          "description": "The check could not run in this environment.",
+          "type": "string"
+        },
+        {
+          "const": "PASS",
+          "description": "The expected behaviour was directly observed.",
+          "type": "string"
+        }
+      ]
+    },
+    "StatusCounts": {
+      "properties": {
+        "fail": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "not_tested": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "pass": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "unknown": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "warning": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "pass",
+        "fail",
+        "warning",
+        "unknown",
+        "not_tested"
+      ],
+      "type": "object"
+    },
+    "Summary": {
+      "properties": {
+        "counts": {
+          "$ref": "#/$defs/StatusCounts"
+        },
+        "verdict": {
+          "$ref": "#/$defs/Verdict"
+        }
+      },
+      "required": [
+        "verdict",
+        "counts"
+      ],
+      "type": "object"
+    },
+    "TargetInfo": {
+      "properties": {
+        "args": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "exe": {
+          "description": "Executable path relative to the build directory.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "exe",
+        "args"
+      ],
+      "type": "object"
+    },
+    "ToolInfo": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "type": "object"
+    },
+    "Verdict": {
+      "enum": [
+        "pass",
+        "fail"
+      ],
+      "type": "string"
+    }
+  },
+  "$id": "https://github.com/Mahan-Imanian/steamos-preflight/blob/main/schemas/report.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "checks": {
+      "items": {
+        "$ref": "#/$defs/CheckResult"
+      },
+      "type": "array"
+    },
+    "environment": {
+      "$ref": "#/$defs/EnvironmentInfo"
+    },
+    "generated_at": {
+      "description": "RFC 3339 UTC timestamp.",
+      "type": "string"
+    },
+    "limitations": {
+      "description": "Things this report cannot tell you, always included.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "runs": {
+      "items": {
+        "$ref": "#/$defs/RunSummary"
+      },
+      "type": "array"
+    },
+    "schema_version": {
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "summary": {
+      "$ref": "#/$defs/Summary"
+    },
+    "target": {
+      "$ref": "#/$defs/TargetInfo"
+    },
+    "tool": {
+      "$ref": "#/$defs/ToolInfo"
+    }
+  },
+  "required": [
+    "schema_version",
+    "tool",
+    "generated_at",
+    "target",
+    "environment",
+    "runs",
+    "checks",
+    "summary",
+    "limitations"
+  ],
+  "title": "SteamOS Preflight report",
+  "type": "object"
+}
