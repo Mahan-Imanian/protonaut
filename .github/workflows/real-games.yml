@@ -229,3 +229,25 @@ jobs:
                       print("        ", d)
           EOF
           grep -ahiE "d3d12|vulkan|driver|fallback|error" "$RESULTS"/runs/*/runtime.log | grep -v "^info:" | head -30 || true
+      - name: Assert what was verified by hand
+        env:
+          RESULTS: ${{ steps.run.outputs.results }}
+        run: |
+          # From reviewing earlier runs: the demo renders its 3D level under
+          # GE-Proton11-12 in Godot's default 1152x648 window.
+          python3 - "$RESULTS/report.json" <<'EOF'
+          import json, sys
+          r = json.load(open(sys.argv[1]))
+          runs = {run["runtime"]: run for run in r["runs"]}
+          def status(cid, rt=None):
+              return next(c for c in r["checks"] if c["id"] == cid and c.get("runtime") == rt)
+          assert r["summary"]["verdict"] == "pass", r["summary"]
+          assert status("SP-PE-003")["status"] == "PASS"
+          for rt in ("ge-proton11-12", "ge-proton10-34"):
+              assert runs[rt]["outcome"] == "survived", runs[rt]
+              assert status("SP-RUN-003", rt)["status"] == "PASS"
+          assert runs["ge-proton11-12"]["capture_verified"] is True
+          assert status("SP-DISP-002", "ge-proton11-12")["status"] == "PASS"
+          assert "1152x648 window" in status("SP-DISP-003", "ge-proton11-12")["summary"]
+          print("Godot expectations hold")
+          EOF
