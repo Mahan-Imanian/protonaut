@@ -1,6 +1,3 @@
-//! `steamos-preflight diagnose`: checks the machine and says how to fix
-//! what is missing. Never changes anything.
-
 use std::path::Path;
 
 use preflight_runtime::display::{SYSTEM_CONFIG_DIR, SYSTEM_CONFIG_NAME};
@@ -9,6 +6,7 @@ use preflight_runtime::install::{Cache, Manifest, default_cache_dir};
 use crate::exit;
 
 const APT: &str = "sudo apt-get install --no-install-recommends xserver-xorg-core xserver-xorg-video-dummy x11-xserver-utils x11-utils imagemagick mesa-vulkan-drivers python3 curl tesseract-ocr tesseract-ocr-eng";
+const APT_I386: &str = "sudo dpkg --add-architecture i386 && sudo apt-get update && sudo apt-get install --no-install-recommends libc6:i386 libx11-6:i386 libxext6:i386 libxrandr2:i386 libxi6:i386 libxcursor1:i386 libxinerama1:i386 libxcomposite1:i386 libxrender1:i386 libxfixes3:i386 libfreetype6:i386 libfontconfig1:i386 libvulkan1:i386 mesa-vulkan-drivers:i386";
 const MIN_CACHE_BYTES: u64 = 4 * 1024 * 1024 * 1024;
 const MIN_TEMP_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 
@@ -83,6 +81,24 @@ pub async fn run(json: bool) -> u8 {
         } else {
             "missing: SP-DISP-005 will be NOT_TESTED; install tesseract-ocr tesseract-ocr-eng"
                 .into()
+        },
+    });
+    let i386 = [
+        "/usr/lib/i386-linux-gnu/libX11.so.6",
+        "/usr/lib/i386-linux-gnu/libfreetype.so.6",
+        "/usr/lib/i386-linux-gnu/libvulkan.so.1",
+        "/usr/lib/i386-linux-gnu/libvulkan_lvp.so",
+    ]
+    .iter()
+    .all(|p| exists(p));
+    items.push(Item {
+        name: "32-bit libraries (for 32-bit games)",
+        ok: i386,
+        required: false,
+        detail: if i386 {
+            "found".into()
+        } else {
+            format!("missing: 32-bit games will fail to start; {APT_I386}")
         },
     });
     let root = nix::unistd::geteuid().is_root();

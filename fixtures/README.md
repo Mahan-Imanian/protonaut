@@ -9,6 +9,7 @@ assets are used anywhere in the tests.
 |---|---|---|
 | `fx_render_ok.exe` | Clears every frame to sRGB (26, 153, 51) | Capture control run (embedded in the CLI) |
 | `fx_scene.exe` | Draws a grid of coloured tiles | A healthy game |
+| `fx_scene32.exe` | `fx_scene` built as a 32-bit executable | 32-bit games (D3D11 through 32-bit DXVK) |
 | `fx_black.exe` | Draws black frames | Black-screen warning |
 | `fx_crash.exe` | Divides by zero after 180 frames (about 3 s) | Crash detection |
 | `fx_exit_fail.exe` | Exits with code 3 before opening a window | Startup failure |
@@ -26,7 +27,7 @@ Every program also accepts `--seconds=N` (exit after N seconds) and
 ## Rebuilding
 
 ```bash
-sudo apt-get install --no-install-recommends g++-mingw-w64-x86-64 binutils-mingw-w64-x86-64
+sudo apt-get install --no-install-recommends g++-mingw-w64-x86-64 binutils-mingw-w64-x86-64 g++-mingw-w64-i686
 ```
 
 ```bash
