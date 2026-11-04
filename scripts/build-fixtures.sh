@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds the Windows test fixtures in fixtures/bin from fixtures/src.
-# Requires mingw-w64 (x86_64-w64-mingw32-g++ and dlltool). The flags remove
+# Requires mingw-w64 (x86_64-w64-mingw32-g++, dlltool, i686-w64-mingw32-g++). The flags remove
 # timestamps and build ids so the output is reproducible; CI rebuilds the
 # fixtures and fails if the committed binaries differ.
 set -euo pipefail
@@ -34,6 +34,8 @@ build fx_dialog 7
 build fx_missing_dll 8 "$tmp/libfx_absent.a"
 build fx_scene 9
 build fx_text_error 10
+CXX32="${CXX32:-i686-w64-mingw32-g++}"
+"$CXX32" "${flags[@]}" -DFX_MODE=9 -o "$out/fx_scene32.exe" "$src/fixture.cpp" "${libs[@]}"
 
 # The sandbox probe is plain C and talks to Winsock.
 x86_64-w64-mingw32-gcc -O2 -static -s -mwindows -fno-ident -ffile-prefix-map="$root"=. \
