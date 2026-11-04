@@ -15,6 +15,7 @@ assets are used anywhere in the tests.
 | `fx_missing_asset.exe` | Exits with code 4 when `assets/level0.dat` is missing | Missing game data |
 | `fx_letterbox.exe` | Draws a 16:9 picture inside the screen, black bars above and below | Letterbox warning |
 | `fx_dialog.exe` | Opens a small extra window next to the game | Dialog warning |
+| `fx_text_error.exe` | Keeps running and draws "Fatal error: required data files are missing" in its window with GDI | In-window error text (SP-DISP-005) |
 | `fx_missing_dll.exe` | Imports `fx_absent.dll`, which does not exist | Missing DLL, static and at runtime |
 | `fx_probe.exe` | Acts like a hostile build: tries the network, the runner's files, CI tokens in `/proc`, `sudo`, and leaves a detached Linux process behind. Writes BLOCKED/OPEN per attempt to `probe-results.txt`, never file contents | Sandbox test in the end-to-end workflow |
 

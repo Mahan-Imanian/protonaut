@@ -16,7 +16,7 @@ import time
 import tomllib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-FRAME_CHECKS = {"SP-DISP-002", "SP-DISP-003"}
+FRAME_CHECKS = {"SP-DISP-002", "SP-DISP-003", "SP-DISP-005"}
 
 
 def find_leaks(results: pathlib.Path, paths: list[str]) -> list[str]:
