@@ -201,6 +201,8 @@ runs:
             rel="${f#"$root"/}"
             [[ "$rel" =~ ^[A-Za-z0-9._/-]+$ && "$rel" != *..* ]] || continue
             mkdir -p "$OUT/$(dirname "$rel")"
+            # Read as root (the sandbox results are 0700), write as the runner.
+            # shellcheck disable=SC2024
             sudo cat -- "$f" > "$OUT/$rel"
           done
         echo "results=$OUT" >> "$GITHUB_OUTPUT"
