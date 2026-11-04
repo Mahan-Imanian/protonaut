@@ -198,8 +198,10 @@ How the checks map to Valve's review criteria, what is missing and what
 needs hardware: [docs/roadmap.md](docs/roadmap.md).
 
 Besides the synthetic fixtures, CI runs real open-source games through the
-action: OpenTTD 15.3, and a Godot 4.7.2 3D game exported with Vulkan and
-with Direct3D 12 (proven to run through vkd3d-proton). Results and screenshots:
+action: OpenTTD 15.3, a Godot 4.7.2 3D game exported with Vulkan and with
+Direct3D 12 (proven to run through vkd3d-proton), and the 32-bit Chocolate
+Doom 3.0.1 with Freedoom. No real game proven to use Direct3D 9-11 is
+covered yet. Results and screenshots:
 [docs/compatibility/real-games.md](docs/compatibility/real-games.md). That
 testing showed that a game can keep running while it shows a fatal error
 **inside its own window** (OpenTTD without its graphics set). SP-DISP-005
