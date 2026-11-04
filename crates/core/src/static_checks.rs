@@ -205,7 +205,11 @@ fn check_case_collisions(tree: &BuildTree) -> CheckResult {
             "SP-FS-001",
             title,
             Status::Pass,
-            format!("{} files checked.", tree.files.len()),
+            format!(
+                "{} file{} checked.",
+                tree.files.len(),
+                if tree.files.len() == 1 { "" } else { "s" }
+            ),
         )
     } else {
         let details = groups.iter().map(|g| g.join("  <->  ")).collect();
