@@ -13,11 +13,16 @@ first checked by hand against the screenshots below.
 | OpenTTD 15.3 (GPL-2.0) with OpenGFX 8.0 | Official Windows release and base graphics from cdn.openttd.org | OpenGL through Wine, falling back to OpenTTD's software renderer |
 | Godot 4.7.2 3D platformer demo (MIT), Vulkan export | Exported for Windows in CI from the official `godot-demo-projects` repository, pinned commit | Godot Forward+ on Vulkan (winevulkan → lavapipe) |
 | The same demo, Direct3D 12 export | As above, with `rendering_device/driver.windows="d3d12"` | Godot Forward+ on Direct3D 12 through vkd3d-proton → lavapipe |
+| Chocolate Doom 3.0.1 (GPL-2.0), 32-bit, with the Freedoom: Phase 1 0.13.0 IWAD (BSD-3-Clause) | Official win32 release from chocolate-doom.org (PGP signature checked before pinning) and Freedoom's GitHub release | SDL2's 2D renderer in a 32-bit process; which backend SDL chose (Direct3D 9, Direct3D 11 or OpenGL) is **not identified** |
 
 Godot's own log, written next to the build and read after the run, proves
 which renderer ran: `D3D12 11_0 - Forward+ - Using Device #0: … llvmpipe`
 for the Direct3D 12 export and `Vulkan 1.4.318 - Forward+ - Using Device #0:
 … llvmpipe` for the Vulkan export. Neither fell back.
+
+Chocolate Doom gives no such proof: it does not log its renderer, and
+DXVK prints nothing at Proton's default log level. Chocolate Doom is
+therefore evidence for 32-bit games in general, not for Direct3D 9.
 
 ## What SteamOS Preflight reported, and whether it was right
 
@@ -37,6 +42,13 @@ for the Direct3D 12 export and `Vulkan 1.4.318 - Forward+ - Using Device #0:
 Screenshots of every run, including OpenTTD (GPL-2.0 artwork, so not stored
 here), are uploaded as artifacts of the Real games workflow.
 
+Chocolate Doom, as reported after the 32-bit fix: under GE-Proton11-12 it
+ran for 40 s in a 1280x800 window, the captured frame shows the Freedoom
+demo playing, SP-DISP-003 warned about the 4:3 picture's side bars (106 and
+107 px, which is correct), and OCR read 312 words of HUD text without an
+error hit. Under GE-Proton10-34 it crashed after about 1 s with an access
+violation, reported as FAIL; the cause is not identified.
+
 ## Problems this testing found
 
 1. **Fixed:** OpenTTD's windowed mode was reported as black letterbox bars.
@@ -48,13 +60,22 @@ here), are uploaded as artifacts of the Real games workflow.
    and keeps running; it used to be reported as a clean pass. SP-DISP-005
    now reads the screen with OCR and reports it as a WARNING quoting the
    message, and the workflow asserts this on every run.
-4. **Environment-specific:** with software rendering OpenTTD shows "Error
+4. **Fixed:** every 32-bit game failed. Chocolate Doom exited with code 255
+   before opening a window because Wine's 32-bit side found no i386 X11,
+   FreeType or Vulkan libraries; with those installed SDL then showed
+   "Couldn't find matching render driver" (flagged by SP-DISP-004 and
+   SP-DISP-005, not passed) until 32-bit OpenGL was added. The action now
+   installs these libraries, `diagnose` reports them, a 32-bit fixture runs
+   in the end-to-end suite, and the workflow asserts the reviewed result.
+5. **Environment-specific:** with software rendering OpenTTD shows "Error
    with video settings... no compatible GPU found". OCR may report it as a
    WARNING; on a Steam Deck with a real GPU the message would most likely
    not appear.
 
 ## Not covered by these games
 
-A DXVK (Direct3D 9-11) game engine: OpenTTD uses OpenGL and Godot uses Vulkan
-or Direct3D 12. The D3D11 path is covered only by the synthetic fixtures.
+A game proven to render through DXVK (Direct3D 9-11): OpenTTD uses OpenGL,
+Godot uses Vulkan or Direct3D 12, and Chocolate Doom's SDL backend is not
+identified. Direct3D 11 is covered only by the synthetic fixtures (64-bit and
+32-bit); Direct3D 9 and 10 are not covered at all.
 Games with Steamworks, anti-cheat or video cutscenes are not covered.
