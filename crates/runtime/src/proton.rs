@@ -1,6 +1,3 @@
-//! The Proton backend: runs a Windows executable with `proton run` on the
-//! virtual display and records what happened.
-
 use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};

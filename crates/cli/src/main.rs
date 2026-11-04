@@ -1,6 +1,3 @@
-//! `steamos-preflight`: automated compatibility testing for Windows games
-//! targeting SteamOS. See `steamos-preflight --help`.
-
 mod diagnose;
 mod run;
 

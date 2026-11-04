@@ -410,7 +410,7 @@ fn hardware_not_tested(_obs: &RunObservation) -> Vec<CheckResult> {
     [
         ("SP-HW-001", "Frame rate at default settings", "Valve's 30 fps target needs real Deck or Steam Machine hardware; this run uses CPU software rendering."),
         ("SP-HW-002", "Controller-only play", "Needs a person with a controller, or scripted input, which this version does not provide."),
-        ("SP-HW-003", "Text legible at 1280x800", "Text measurement (OCR) is not implemented in this version."),
+        ("SP-HW-003", "Text legible at 1280x800", "Text size is not measured in this version (OCR is used only to find error messages)."),
     ]
     .into_iter()
     .map(|(id, title, why)| CheckResult::new(id, title, Category::Hardware, Status::NotTested, Evidence::None, why))
