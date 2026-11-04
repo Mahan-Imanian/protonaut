@@ -6,6 +6,10 @@ members = ["crates/core", "crates/runtime", "crates/cli"]
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.88"
+license = "MIT OR Apache-2.0"
+authors = ["SteamOS Preflight contributors"]
+keywords = ["steamos", "proton", "steam-deck", "ci", "gamedev"]
+categories = ["development-tools::testing", "command-line-utilities"]
 repository = "https://github.com/Mahan-Imanian/steamos-preflight"
 publish = false
 

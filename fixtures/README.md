@@ -35,3 +35,10 @@ The build strips timestamps, build ids and source paths, so two builds with
 the same MinGW version produce identical files. `bin/SHA256SUMS` records
 the hashes, and the `fixtures` CI job rebuilds on Ubuntu 24.04 and fails if
 the committed binaries differ from the source.
+
+## Licensing
+
+The fixture sources are part of SteamOS Preflight (MIT OR Apache-2.0). The
+binaries are statically linked with the MinGW-w64 runtime and GCC's
+libstdc++, which the GCC Runtime Library Exception and the MinGW-w64
+runtime licences allow to be distributed in compiled programs.
