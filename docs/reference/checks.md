@@ -36,7 +36,7 @@ that can be wrong. `none`: nothing was measured.
 | SP-RUN-003 | No crash signatures in the Wine log | An unhandled exception was logged | |
 | SP-DISP-001 | A window appears | None appeared during the window | |
 | SP-DISP-002 | Visible content (heuristic) | never | `WARNING` when every frame is black or one flat colour |
-| SP-DISP-003 | Content fills the screen (heuristic) | never | `WARNING` on black bars over 5% of the width or height; `UNKNOWN` without content |
+| SP-DISP-003 | Content fills the screen | never | `WARNING` (observed) when the game window is smaller than the display, since gamescope would scale it; otherwise `WARNING` (heuristic) on black bars over 5% of the width or height; `UNKNOWN` without content |
 | SP-DISP-004 | No extra small window (heuristic) | never | `WARNING` when a window smaller than half the screen appears, for example an error or "unsupported GPU" dialog |
 
 `SP-DISP-002` and `SP-DISP-003` read screenshots. Before the game runs, a

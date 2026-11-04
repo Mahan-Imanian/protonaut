@@ -275,7 +275,29 @@ fn display_checks(obs: &RunObservation) -> Vec<CheckResult> {
 
     let (dw, dh) = obs.display;
     let b = st.bars;
-    let fill = if st.is_black() || st.is_uniform() {
+    // The largest window that is not tiny; a game in windowed mode leaves the
+    // rest of the screen black, which is not letterboxing.
+    let game_window = obs
+        .windows
+        .iter()
+        .filter(|w| w.width >= dw / 2 && w.height >= dh / 2)
+        .max_by_key(|w| u64::from(w.width) * u64::from(w.height));
+    let windowed = game_window.filter(|w| w.width < dw || w.height < dh);
+    let fill = if let Some(w) = windowed {
+        CheckResult::new(
+            ids[1].0,
+            ids[1].1,
+            Category::Display,
+            Status::Warning,
+            Evidence::Observed,
+            format!(
+                "The game opened a {}x{} window on the {dw}x{dh} display instead of filling it. \
+                 SteamOS's gamescope scales such a window to the screen, which can blur text; \
+                 Valve recommends rendering at the device resolution by default.",
+                w.width, w.height
+            ),
+        )
+    } else if st.is_black() || st.is_uniform() {
         CheckResult::new(
             ids[1].0,
             ids[1].1,
@@ -476,6 +498,40 @@ mod tests {
             (Status::Warning, Evidence::Heuristic)
         );
         assert_eq!(get(&evaluate(&o), "SP-DISP-003").status, Status::Unknown);
+    }
+
+    #[test]
+    fn windowed_game_is_reported_as_windowed_not_letterboxed() {
+        let mut o = obs(RunOutcome::Survived);
+        o.windows = vec![WindowSeen {
+            title: "OpenTTD".into(),
+            width: 960,
+            height: 600,
+        }];
+        o.screenshots[0].stats = stats(
+            false,
+            false,
+            Bars {
+                top: 100,
+                bottom: 100,
+                left: 160,
+                right: 160,
+            },
+        );
+        let c = get(&evaluate(&o), "SP-DISP-003");
+        assert_eq!(
+            (c.status, c.evidence),
+            (Status::Warning, Evidence::Observed)
+        );
+        assert!(c.summary.contains("960x600 window"), "{}", c.summary);
+        // A small dialog next to a full-screen game is not the game window.
+        let mut o = obs(RunOutcome::Survived);
+        o.windows.push(WindowSeen {
+            title: "Error".into(),
+            width: 400,
+            height: 150,
+        });
+        assert_eq!(get(&evaluate(&o), "SP-DISP-003").status, Status::Pass);
     }
 
     #[test]
