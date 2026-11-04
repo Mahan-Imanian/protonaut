@@ -17,6 +17,7 @@
 #define FX_DIALOG 7
 #define FX_MISSING_DLL 8
 #define FX_SCENE 9
+#define FX_TEXT_ERROR 10
 
 #ifndef FX_MODE
 #error "define FX_MODE"
@@ -33,6 +34,30 @@ static LRESULT CALLBACK wnd_proc(HWND h, UINT m, WPARAM w, LPARAM l) {
     }
     return DefWindowProcW(h, m, w, l);
 }
+
+#if FX_MODE == FX_TEXT_ERROR
+/* Keeps running and shows a fatal message inside its own window, as a game
+ * engine does when its data is missing. */
+static LRESULT CALLBACK text_proc(HWND h, UINT m, WPARAM w, LPARAM l) {
+    if (m == WM_PAINT) {
+        PAINTSTRUCT ps;
+        HDC dc = BeginPaint(h, &ps);
+        RECT r;
+        GetClientRect(h, &r);
+        FillRect(dc, &r, (HBRUSH)GetStockObject(BLACK_BRUSH));
+        HFONT font = CreateFontW(40, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, ANTIALIASED_QUALITY, 0, L"Arial");
+        HGDIOBJ old = SelectObject(dc, font);
+        SetTextColor(dc, RGB(255, 255, 255));
+        SetBkMode(dc, TRANSPARENT);
+        DrawTextW(dc, L"Fatal error: required data files are missing", -1, &r, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        SelectObject(dc, old);
+        DeleteObject(font);
+        EndPaint(h, &ps);
+        return 0;
+    }
+    return wnd_proc(h, m, w, l);
+}
+#endif
 
 static double arg_seconds(const char* cmd, double fallback) {
     const char* p = strstr(cmd, "--seconds=");
@@ -63,6 +88,26 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE, LPSTR cmd, int) {
     const double seconds = arg_seconds(cmd, 3600.0);
     const int width = GetSystemMetrics(SM_CXSCREEN);
     const int height = GetSystemMetrics(SM_CYSCREEN);
+#if FX_MODE == FX_TEXT_ERROR
+    {
+        WNDCLASSW tc = {};
+        tc.lpfnWndProc = text_proc;
+        tc.hInstance = inst;
+        tc.lpszClassName = L"preflight_text";
+        RegisterClassW(&tc);
+        CreateWindowW(L"preflight_text", L"Preflight Fixture", WS_POPUP | WS_VISIBLE, 0, 0, width, height, 0, 0, inst, 0);
+        const DWORD t0 = GetTickCount();
+        MSG msg;
+        while ((GetTickCount() - t0) / 1000.0 < seconds) {
+            while (PeekMessageW(&msg, 0, 0, 0, PM_REMOVE)) {
+                TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
+            Sleep(16);
+        }
+        return 0;
+    }
+#endif
 
     WNDCLASSW wc = {};
     wc.lpfnWndProc = wnd_proc;

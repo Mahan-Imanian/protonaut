@@ -33,6 +33,7 @@ build fx_letterbox 6
 build fx_dialog 7
 build fx_missing_dll 8 "$tmp/libfx_absent.a"
 build fx_scene 9
+build fx_text_error 10
 
 # The sandbox probe is plain C and talks to Winsock.
 x86_64-w64-mingw32-gcc -O2 -static -s -mwindows -fno-ident -ffile-prefix-map="$root"=. \
