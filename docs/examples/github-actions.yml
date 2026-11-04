@@ -1,0 +1,58 @@
+# Example: test a Windows build on every pull request and comment the report.
+# Replace the <sha> placeholders with full commit SHAs (see docs/reference/action.md).
+name: SteamOS Preflight
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@<sha> # v7
+        with:
+          persist-credentials: false
+
+      - name: Build the Windows game
+        run: ./build-windows.sh # produces dist/Windows/MyGame.exe
+
+      - id: preflight
+        uses: Mahan-Imanian/steamos-preflight@<sha>
+        with:
+          fail-job: "false" # keep the outputs; the last step fails the job
+          build: dist/Windows
+          exe: MyGame.exe
+          runtimes: stable
+
+      - uses: actions/upload-artifact@<sha> # v7
+        if: always()
+        with:
+          name: preflight-report
+          path: ${{ steps.preflight.outputs.results }}/report.json
+
+      - name: Fail on compatibility failures
+        if: steps.preflight.outputs.verdict != 'pass'
+        run: exit 1
+
+  comment:
+    needs: preflight
+    if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write # update the report comment
+    steps:
+      - uses: actions/download-artifact@<sha> # v8
+        with:
+          name: preflight-report
+      - uses: Mahan-Imanian/steamos-preflight/comment@<sha>
+        with:
+          report: report.json
+          pr-number: ${{ github.event.pull_request.number }}
