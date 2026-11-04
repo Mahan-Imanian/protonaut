@@ -81,6 +81,9 @@ pub struct Supervised {
     pgid: Pid,
     started: Instant,
     reaped: Option<Exit>,
+    /// Set once `stop` has killed and reaped the group, so `Drop` does not
+    /// signal a process group id the kernel may already have reused.
+    stopped: bool,
 }
 
 impl Supervised {
@@ -116,6 +119,7 @@ impl Supervised {
             pgid,
             started: Instant::now(),
             reaped: None,
+            stopped: false,
         })
     }
 
@@ -156,6 +160,7 @@ impl Supervised {
         }
         let _ = killpg(self.pgid, Signal::SIGKILL);
         let _ = self.child.wait().await;
+        self.stopped = true;
         before.unwrap_or(Exit::StillRunning)
     }
 }
@@ -163,7 +168,9 @@ impl Supervised {
 impl Drop for Supervised {
     fn drop(&mut self) {
         // Safety net for early returns and cancellation.
-        let _ = killpg(self.pgid, Signal::SIGKILL);
+        if !self.stopped {
+            let _ = killpg(self.pgid, Signal::SIGKILL);
+        }
     }
 }
 
