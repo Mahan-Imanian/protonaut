@@ -116,21 +116,26 @@ runs:
         set -euo pipefail
         sandbox=spf-sandbox
         root=/var/tmp/steamos-preflight
-        id "$sandbox" >/dev/null 2>&1 || sudo useradd --system --create-home --home-dir "$root/home" --shell /usr/sbin/nologin "$sandbox"
-        sudo rm -rf -- "$root/build" "$root/results"
-        sudo install -d -o "$sandbox" -g "$sandbox" -m 0750 "$root" "$root/build" "$root/results" "$root/cache" "$root/cache/downloads"
+        id "$sandbox" >/dev/null 2>&1 || sudo useradd --system --no-create-home --home-dir "$root/home" --shell /usr/sbin/nologin "$sandbox"
+        # Root owns the top directory and the runtime cache, so a build cannot
+        # alter the Proton files a later use of the action in this job runs.
+        # The sandbox user owns only a fresh home, the build copy and results.
+        sudo install -d -o root -g root -m 0755 "$root" "$root/cache" "$root/cache/downloads"
+        sudo rm -rf -- "$root/build" "$root/results" "$root/home"
+        sudo install -d -o "$sandbox" -g "$sandbox" -m 0700 "$root/home" "$root/build" "$root/results"
         # The game gets a copy of the build; it never sees the workspace,
         # the git credentials or the runner's home directory.
         sudo cp -R --no-preserve=ownership -- "$GITHUB_WORKSPACE/$IN_BUILD/." "$root/build/"
         sudo chown -R "$sandbox:$sandbox" "$root/build"
         mkdir -p "$DOWNLOADS"
         if compgen -G "$DOWNLOADS/*.tar.gz" >/dev/null; then sudo cp -- "$DOWNLOADS"/*.tar.gz "$root/cache/downloads/"; fi
-        sudo chown -R "$sandbox:$sandbox" "$root/cache"
         sudo steamos-preflight setup
         for rt in $IN_RUNTIMES; do
-          sudo -u "$sandbox" env -i PATH=/usr/local/bin:/usr/bin:/bin HOME="$root/home" STEAMOS_PREFLIGHT_CACHE="$root/cache" \
+          sudo env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/root STEAMOS_PREFLIGHT_CACHE="$root/cache" \
             steamos-preflight proton install "$rt"
         done
+        sudo chown -R root:root "$root/cache"
+        sudo chmod -R u+rwX,go+rX,go-w "$root/cache"
         sudo find "$root/cache/downloads" -maxdepth 1 -name '*.tar.gz' -type f -exec cp -- {} "$DOWNLOADS/" \;
         sudo chown -R "$(id -u):$(id -g)" "$DOWNLOADS"
         sudo -u "$sandbox" env -i PATH=/usr/local/bin:/usr/bin:/bin HOME="$root/home" STEAMOS_PREFLIGHT_CACHE="$root/cache" steamos-preflight diagnose
