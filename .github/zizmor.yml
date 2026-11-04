@@ -1,0 +1,7 @@
+# zizmor configuration. Every ignore needs a reason.
+rules:
+  self-repository:
+    ignore:
+      # e2e.yml deliberately runs `uses: ./` and `uses: ./comment` so the
+      # end-to-end job tests the exact checked-out code of this commit.
+      - e2e.yml
