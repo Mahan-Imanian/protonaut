@@ -10,7 +10,7 @@ assets are used anywhere in the tests.
 | `fx_render_ok.exe` | Clears every frame to sRGB (26, 153, 51) | Capture control run (embedded in the CLI) |
 | `fx_scene.exe` | Draws a grid of coloured tiles | A healthy game |
 | `fx_black.exe` | Draws black frames | Black-screen warning |
-| `fx_crash.exe` | Divides by zero after 60 frames | Crash detection |
+| `fx_crash.exe` | Divides by zero after 180 frames (about 3 s) | Crash detection |
 | `fx_exit_fail.exe` | Exits with code 3 before opening a window | Startup failure |
 | `fx_missing_asset.exe` | Exits with code 4 when `assets/level0.dat` is missing | Missing game data |
 | `fx_letterbox.exe` | Draws a 16:9 picture inside the screen, black bars above and below | Letterbox warning |

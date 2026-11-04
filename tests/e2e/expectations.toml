@@ -13,15 +13,15 @@ checks = { "SP-RUN-002" = "PASS", "SP-DISP-001" = "PASS", "SP-DISP-002" = "WARNI
 
 [fixture.fx_crash]
 verdict = "fail"
-checks = { "SP-RUN-001" = "PASS", "SP-RUN-002" = "FAIL", "SP-RUN-003" = "FAIL" }
+checks = { "SP-RUN-001" = "PASS", "SP-RUN-002" = "FAIL", "SP-RUN-003" = "FAIL", "SP-DISP-001" = "PASS" }
 
 [fixture.fx_exit_fail]
 verdict = "fail"
-checks = { "SP-RUN-002" = "FAIL", "SP-RUN-003" = "PASS", "SP-DISP-001" = "FAIL" }
+checks = { "SP-RUN-002" = "FAIL", "SP-RUN-003" = "PASS", "SP-DISP-001" = "UNKNOWN" }
 
 [fixture.fx_missing_asset]
 verdict = "fail"
-checks = { "SP-RUN-002" = "FAIL", "SP-DISP-001" = "FAIL" }
+checks = { "SP-RUN-002" = "FAIL", "SP-DISP-001" = "UNKNOWN" }
 
 [fixture.fx_letterbox]
 verdict = "pass"
