@@ -1,7 +1,7 @@
 # GitHub Action
 
 ```yaml
-- uses: Mahan-Imanian/steamos-preflight@<full commit SHA> # pin, see "Pinning"
+- uses: Mahan-Imanian/steamos-preflight@v0.1.0
   with:
     build: dist/Windows
     exe: MyGame.exe
@@ -40,9 +40,11 @@ below does. An environment error still fails the step.
 ## What it does
 
 1. Validates the inputs and the runner.
-2. Installs Xorg (dummy driver), Mesa lavapipe, ImageMagick and x11 tools.
-3. Builds the CLI from the action's own source with `cargo build --locked`
-   (about 1-2 minutes; prebuilt release binaries will replace this).
+2. Installs Xorg (dummy driver), Mesa lavapipe, ImageMagick, Tesseract OCR
+   and x11 tools.
+3. Installs the CLI: for a `vX.Y.Z` tag, the release binary after checking
+   its SHA-256 and build provenance attestation (see [Pinning](#pinning));
+   for any other ref, a `cargo build --locked` of the action's own source.
 4. Restores cached runtime downloads, installs and verifies the runtimes.
 5. Copies the build to a directory owned by the `spf-sandbox` user and runs
    the test as that user, with an empty environment and, by default, no
@@ -64,17 +66,17 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@<sha> # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - run: ./build-windows.sh            # your build
       - id: preflight
-        uses: Mahan-Imanian/steamos-preflight@<sha>
+        uses: Mahan-Imanian/steamos-preflight@v0.1.0
         with:
           fail-job: "false"
           build: dist/Windows
           exe: MyGame.exe
-      - uses: actions/upload-artifact@<sha> # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: preflight-report
@@ -90,10 +92,10 @@ jobs:
       contents: read
       pull-requests: write # update the report comment
     steps:
-      - uses: actions/download-artifact@<sha> # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: preflight-report
-      - uses: Mahan-Imanian/steamos-preflight/comment@<sha>
+      - uses: Mahan-Imanian/steamos-preflight/comment@v0.1.0
         with:
           report: report.json
           pr-number: ${{ github.event.pull_request.number }}
@@ -109,15 +111,24 @@ A complete workflow is in [examples/github-actions.yml](../examples/github-actio
 
 ## Pinning
 
-Pin the action to a full commit SHA, as for any third-party action. Tags
-such as `v0.1.0` will exist from the first release; a `v0` major tag will
-follow the 1.0 stability commitment.
+`@v0.1.0` installs the release binary. Before running it, the action checks
+it against the release's `SHA256SUMS` and verifies its GitHub build
+provenance attestation: it must have been built by this repository's
+`release.yml` workflow from the `refs/tags/v0.1.0` ref on a GitHub-hosted
+runner. Any mismatch stops the job.
+
+Tags can be moved. For an immutable pin, use the full commit SHA that
+`v0.1.0` points to. With any ref other than a `vX.Y.Z` tag, including a commit
+SHA, the action builds the CLI from source with `cargo build --locked`, which
+adds about three minutes to the first use in a job. There is no `v0` major
+tag yet; one will follow the 1.0 stability commitment.
 
 ## Cost
 
 GitHub-hosted runner minutes are free for public repositories and billed or
 quota-limited for private ones. Measured on `ubuntu-24.04`: the first use in
-a job took 235 s (packages, building the CLI, downloading the runtime, one
-test with `observe-secs: 12`); a second use in the same job took 31 s. Each
+a job took 235 s when it built the CLI from source (packages, the build,
+downloading the runtime, one test with `observe-secs: 12`); a second use in
+the same job took 31 s. A release tag skips the build. Each
 runtime adds roughly 10 s plus `observe-secs`. Numbers per step are in
 [runtimes.md](../compatibility/runtimes.md#timing-observed-on-github-hosted-ubuntu-2404-november-2026).
