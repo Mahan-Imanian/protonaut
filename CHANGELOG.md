@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- Licensed under MIT OR Apache-2.0.
+
 ### Added
 
 - `steamos-preflight` CLI: `test` runs a Windows build under pinned GE-Proton builds on a headless Xorg display with software Vulkan, `inspect` runs static checks only, plus `proton`, `report`, `diagnose`, `setup`, `init` and `schema` commands.
