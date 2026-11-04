@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-04
+
 ### Security
 
 - The action kills every process of the sandbox user before reading results, so a build cannot leave a detached process running into later steps.
@@ -33,3 +35,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Versioned `report.json` (schema v1) with Markdown, HTML and JUnit renderings; JSON Schemas for the report and `preflight.toml`.
 - GitHub Action (`uses: Mahan-Imanian/steamos-preflight@<ref>`) that runs the build as an unprivileged user with no network and no CI token, uploads results and writes a job summary (`fail-job: "false"` keeps its outputs available), plus a `comment` action that posts or updates one PR comment from `report.json`.
 - Reproducible Windows test fixtures and an end-to-end suite covering crash, startup failure, missing asset, missing DLL, black screen, letterbox and dialog cases.
+
+[Unreleased]: https://github.com/Mahan-Imanian/steamos-preflight/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Mahan-Imanian/steamos-preflight/releases/tag/v0.1.0
