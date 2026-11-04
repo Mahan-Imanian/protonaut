@@ -38,7 +38,7 @@ steamos-preflight test dist/Windows --exe MyGame.exe --install
 
 ```text
 FAIL       SP-RUN-002     Game keeps running during the observation window [ge-proton11-12] — Crashed after 4.1 s.
-FAILED: 10 pass, 2 fail, 0 warning, 2 unknown, 5 not tested. Report: preflight-results/report.html
+Failures found: 10 pass, 2 fail, 0 warning, 2 unknown, 5 not tested. Report: preflight-results/report.html
 ```
 
 > Independent community project, **not affiliated with Valve**. It cannot
@@ -117,7 +117,7 @@ comment setup and a [complete example workflow](docs/examples/github-actions.yml
 On Ubuntu 24.04 (or a similar x86-64 Linux):
 
 ```bash
-sudo apt-get install --no-install-recommends xserver-xorg-core xserver-xorg-video-dummy x11-xserver-utils x11-utils imagemagick mesa-vulkan-drivers python3 curl
+sudo apt-get install --no-install-recommends xserver-xorg-core xserver-xorg-video-dummy x11-xserver-utils x11-utils imagemagick mesa-vulkan-drivers python3 curl tesseract-ocr tesseract-ocr-eng
 ```
 
 ```bash
@@ -154,7 +154,7 @@ FAIL       SP-RUN-002     Game keeps running during the observation window [ge-p
 FAIL       SP-RUN-003     No crash signatures in the runtime log [ge-proton11-12] — 1 crash signature(s) in the Wine log.
 NOT_TESTED SP-HW-001      Frame rate at default settings [ge-proton11-12] — Valve's 30 fps target needs real Deck or Steam Machine hardware; this run uses CPU software rendering.
 
-FAILED: 10 pass, 2 fail, 0 warning, 2 unknown, 5 not tested. Report: preflight-results/report.html
+Failures found: 10 pass, 2 fail, 0 warning, 2 unknown, 5 not tested. Report: preflight-results/report.html
 ```
 
 An excerpt of `steamos-preflight test` on the crash fixture from [`fixtures/`](fixtures/README.md); the
@@ -185,8 +185,10 @@ Besides the synthetic fixtures, CI runs real open-source games through the
 action: OpenTTD 15.3, and a Godot 4.7.2 3D game exported with Vulkan and
 with Direct3D 12 (proven to run through vkd3d-proton). Results and screenshots:
 [docs/compatibility/real-games.md](docs/compatibility/real-games.md). That
-testing found a known blind spot: a game that shows a fatal error **inside
-its own window** (OpenTTD without its graphics set) is reported as passing.
+testing showed that a game can keep running while it shows a fatal error
+**inside its own window** (OpenTTD without its graphics set). SP-DISP-005
+reads the screen with OCR and reports such text as a warning; OCR can miss
+stylised or very small text, so a clean result is not proof.
 
 ## Contributing
 

@@ -38,10 +38,11 @@ that can be wrong. `none`: nothing was measured.
 | SP-DISP-002 | Visible content (heuristic) | never | `WARNING` when every frame is black or one flat colour |
 | SP-DISP-003 | Content fills the screen | never | `WARNING` (observed) when the game window is smaller than the display, since gamescope would scale it; otherwise `WARNING` (heuristic) on black bars over 5% of the width or height; `UNKNOWN` without content |
 | SP-DISP-004 | No extra small window (heuristic) | never | `WARNING` when a window smaller than half the screen appears, for example an error or "unsupported GPU" dialog |
+| SP-DISP-005 | No error message on screen (heuristic) | never | `WARNING` when OCR (Tesseract) reads error language on the representative frame ("error", "fatal", "missing", "not found", "unsupported", …), quoting the lines; `NOT_TESTED` when capture is not verified or Tesseract is not installed |
 
-`SP-DISP-002` and `SP-DISP-003` read screenshots. Before the game runs, a
+`SP-DISP-002`, `SP-DISP-003` and `SP-DISP-005` read screenshots. Before the game runs, a
 control program that draws a known colour runs under the same runtime and
-display; if its colour is not captured, both checks are `NOT_TESTED` for
+display; if its colour is not captured, these checks are `NOT_TESTED` for
 that runtime, never `WARNING` or `PASS`. See
 [runtimes](../compatibility/runtimes.md) for which runtimes capture correctly.
 

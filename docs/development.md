@@ -21,7 +21,7 @@ function over a `RunObservation` (`crates/core/src/runtime_checks.rs`).
 ## With Proton (Ubuntu 24.04 or similar, x86-64)
 
 ```bash
-sudo apt-get install --no-install-recommends xserver-xorg-core xserver-xorg-video-dummy x11-xserver-utils x11-utils imagemagick mesa-vulkan-drivers python3 curl
+sudo apt-get install --no-install-recommends xserver-xorg-core xserver-xorg-video-dummy x11-xserver-utils x11-utils imagemagick mesa-vulkan-drivers python3 curl tesseract-ocr tesseract-ocr-eng
 ```
 
 ```bash

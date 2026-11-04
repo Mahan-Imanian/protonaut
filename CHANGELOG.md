@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- SP-DISP-005 reads the screen with OCR (Tesseract) and warns about error messages a game draws inside its own window. Summaries with warnings read "No failures, N warnings to review" instead of a plain pass.
 - Real-game tests in CI: OpenTTD 15.3, and a Godot 4.7.2 3D game exported with Vulkan and with Direct3D 12.
 - `docs/roadmap.md`: coverage of Valve's review criteria and the roadmap.
 - `steamos-preflight` CLI: `test` runs a Windows build under pinned GE-Proton builds on a headless Xorg display with software Vulkan, `inspect` runs static checks only, plus `proton`, `report`, `diagnose`, `setup`, `init` and `schema` commands.
