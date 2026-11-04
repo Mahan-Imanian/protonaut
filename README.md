@@ -181,10 +181,12 @@ known gaps: [docs/compatibility/runtimes.md](docs/compatibility/runtimes.md).
 How the checks map to Valve's review criteria, what is missing and what
 needs hardware: [docs/roadmap.md](docs/roadmap.md).
 
-Besides the synthetic fixtures, CI runs the real open-source game OpenTTD
-15.3 through the action. That testing found a known blind spot: a game that
-shows a fatal error **inside its own window** (OpenTTD without its graphics
-set) is currently reported as passing.
+Besides the synthetic fixtures, CI runs real open-source games through the
+action: OpenTTD 15.3, and a Godot 4.7.2 3D game exported with Vulkan and
+with Direct3D 12 (proven to run through vkd3d-proton). Results and screenshots:
+[docs/compatibility/real-games.md](docs/compatibility/real-games.md). That
+testing found a known blind spot: a game that shows a fatal error **inside
+its own window** (OpenTTD without its graphics set) is reported as passing.
 
 ## Contributing
 
