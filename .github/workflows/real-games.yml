@@ -36,6 +36,14 @@ env:
   GODOT_ZIP_SHA512: 9aa00f7a605200940bce3027a567b782f49bd8e940dd06ae9e987bd65aee1b1467edd56ed84fcdcbdd44354bf613bdbb4e5d2913e925850368e150c59ed54c65
   GODOT_TPZ_SHA512: ca4d71c4d7b81dfc15d1a98baa07534aa95b03fdda78a0075b06672e1648d2e5f40980c9adc28d23e1b92e732ee7bf3461997aa804af74ec2fcd7a93ccb84079
   DEMOS_COMMIT: b761b4cd5718a7118f2c95eb55f181d0a5f004f1
+  # Chocolate Doom 3.0.1 (GPL-2.0) from chocolate-doom.org; the archive's PGP
+  # signature by Simon Howard (6D2C117E0310664497AA9546F6C2EE9C23354344) was
+  # verified before pinning. Freedoom 0.13.0 (BSD-3-Clause) is unsigned; its
+  # hash is pinned as first downloaded.
+  CHOCOLATE_URL: https://www.chocolate-doom.org/downloads/3.0.1/chocolate-doom-3.0.1-win32.zip
+  CHOCOLATE_SHA256: f038d1db11df5984e9f6a1dd9ff554b7d09554bbc6500c247d7dae67e3dad502
+  FREEDOOM_URL: https://github.com/freedoom/freedoom/releases/download/v0.13.0/freedoom-0.13.0.zip
+  FREEDOOM_SHA256: 3f9b264f3e3ce503b4fb7f6bdcb1f419d93c7b546f4df3e874dd878db9688f59
 
 jobs:
   openttd:
@@ -262,3 +270,51 @@ jobs:
           assert "1152x648 window" in status("SP-DISP-003", "ge-proton11-12")["summary"]
           print("Godot expectations hold")
           EOF
+
+  chocolate-doom:
+    name: Chocolate Doom 3.0.1 with Freedoom
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download and verify
+        run: |
+          curl -sSfL -o chocolate.zip "$CHOCOLATE_URL"
+          curl -sSfL -o freedoom.zip "$FREEDOOM_URL"
+          echo "$CHOCOLATE_SHA256  chocolate.zip" | sha256sum -c -
+          echo "$FREEDOOM_SHA256  freedoom.zip" | sha256sum -c -
+      - name: Assemble the game with the Freedoom IWAD
+        run: |
+          mkdir -p dist/doom wads
+          unzip -q chocolate.zip -d dist/doom
+          unzip -q -j freedoom.zip '*/freedoom1.wad' -d wads
+          cp wads/freedoom1.wad dist/doom/
+      - name: Run under the action
+        id: run
+        uses: ./
+        with:
+          build: dist/doom
+          exe: chocolate-doom.exe
+          runtimes: ge-proton11-12 ge-proton10-34
+          observe-secs: "40"
+          artifact-name: real-chocolate-doom
+          fail-job: "false"
+      - name: Summarise
+        env:
+          RESULTS: ${{ steps.run.outputs.results }}
+        run: |
+          python3 - "$RESULTS/report.json" <<'EOF'
+          import json, sys
+          r = json.load(open(sys.argv[1]))
+          print("==", r["summary"])
+          for run in r["runs"]:
+              print("  run", run)
+          for c in r["checks"]:
+              if c["category"] != "hardware":
+                  print(f"  {c['status']:<10} {c['id']:<13} {c.get('runtime') or 'static':<15} {c['summary']}")
+                  for d in c.get("details", [])[:5]:
+                      print("        ", d)
+          EOF
+          for f in "$RESULTS"/runs/*/runtime.log; do echo "## $f"; grep -aiE "d3d9|direct3d|dxvk|swapchain|present mode" "$f" | head -12 || true; done
