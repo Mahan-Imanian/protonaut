@@ -154,10 +154,12 @@ runs:
         isolate=()
         if [[ "$IN_NETWORK" == "off" ]]; then isolate=(unshare --net --); fi
         # A clean environment: no GITHUB_TOKEN, no ACTIONS_* variables.
+        # GitHub runs `bash -e`, so a nonzero exit must be captured with `||`
+        # or the step would stop before recording the verdict.
+        code=0
         sudo "${isolate[@]}" setpriv --reuid="$sandbox" --regid="$sandbox" --init-groups -- \
           env -i PATH=/usr/local/bin:/usr/bin:/bin HOME="$root/home" STEAMOS_PREFLIGHT_CACHE="$root/cache" TMPDIR="$root/home" \
-          steamos-preflight "${args[@]}"
-        code=$?
+          steamos-preflight "${args[@]}" || code=$?
         echo "exit-code=$code" >> "$GITHUB_OUTPUT"
         case $code in
           0) echo "verdict=pass" >> "$GITHUB_OUTPUT" ;;
