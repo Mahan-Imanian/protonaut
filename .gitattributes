@@ -1,0 +1,26 @@
+# Normalize line endings to LF for every text file, any OS.
+* text=auto eol=lf
+
+# Windows batch scripts: cmd.exe misreads them with LF endings.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary assets: never touch these even if git guesses wrong.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.avif  binary
+*.ico   binary
+*.pdf   binary
+*.zip   binary
+*.gz    binary
+*.mp3   binary
+*.mp4   binary
+*.ttf   binary
+*.otf   binary
+*.woff  binary
+*.woff2 binary
+*.exe   binary
+*.dll   binary
