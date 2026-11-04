@@ -172,12 +172,12 @@ runs:
       id: collect
       if: always()
       shell: bash
-      env:
-        OUT: ${{ runner.temp }}/steamos-preflight-results
       run: |
         set -euo pipefail
         root=/var/tmp/steamos-preflight/results
-        rm -rf -- "$OUT"; mkdir -p "$OUT"
+        # One directory per invocation, so several uses in a job (other
+        # builds, other resolutions) never overwrite each other's results.
+        OUT=$(mktemp -d "$RUNNER_TEMP/steamos-preflight-results.XXXXXX")
         # Everything in $root was writable by the build under test, so only
         # regular files of known types with plain names are copied, and
         # symlinks are never followed.
