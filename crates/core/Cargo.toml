@@ -1,0 +1,23 @@
+[package]
+name = "preflight-core"
+description = "Configuration, result model, static PE checks and reports for SteamOS Preflight."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+object = { version = "0.40.0", default-features = false, features = ["read_core", "pe", "std"] }
+schemars = "1.2.3"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+thiserror = "2.0.21"
+time = { version = "0.3.55", features = ["formatting"] }
+toml = "1.2.0"
+
+[dev-dependencies]
+tempfile = "3.27.0"
