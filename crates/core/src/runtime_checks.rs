@@ -2,7 +2,7 @@
 //! is unit-tested without Proton.
 
 use crate::model::{Category, CheckResult, Evidence, RunOutcome, Status};
-use crate::observe::{RunObservation, ScreenText, error_lines, representative};
+use crate::observe::{RunObservation, ScreenText, error_snippets, representative};
 
 pub fn evaluate(obs: &RunObservation) -> Vec<CheckResult> {
     let mut out = vec![launch(obs), stability(obs), log_errors(obs)];
@@ -385,7 +385,7 @@ fn screen_text_check(obs: &RunObservation) -> CheckResult {
     match &obs.screen_text {
         ScreenText::NotRead(why) => not_tested(why.clone()),
         ScreenText::Read { path, text } => {
-            let hits = error_lines(text);
+            let hits = error_snippets(text);
             let words = text.split_whitespace().count();
             if hits.is_empty() {
                 CheckResult::new(
