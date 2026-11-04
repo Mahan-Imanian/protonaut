@@ -82,15 +82,35 @@ runs:
           xserver-xorg-core xserver-xorg-video-dummy x11-xserver-utils x11-utils \
           imagemagick mesa-vulkan-drivers python3 curl util-linux tesseract-ocr tesseract-ocr-eng >/dev/null
 
-    - name: Build steamos-preflight
+    - name: Install steamos-preflight
       shell: bash
       env:
         ACTION_DIR: ${{ github.action_path }}
+        ACTION_REF: ${{ github.action_ref }}
+        GH_TOKEN: ${{ github.token }}
       run: |
         set -euo pipefail
-        cd "$ACTION_DIR"
-        cargo build --locked --release --quiet
-        sudo install -m 0755 target/release/steamos-preflight /usr/local/bin/steamos-preflight
+        repo=Mahan-Imanian/steamos-preflight
+        if [[ "$ACTION_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          # A release tag: use the release binary, but only after its checksum
+          # and its build provenance (signed by this repository's release
+          # workflow for this exact tag) verify. Any failure stops the step.
+          dir=$(mktemp -d)
+          base="https://github.com/$repo/releases/download/$ACTION_REF"
+          curl -sSfL --proto '=https' -o "$dir/steamos-preflight-x86_64-unknown-linux-gnu" "$base/steamos-preflight-x86_64-unknown-linux-gnu"
+          curl -sSfL --proto '=https' -o "$dir/SHA256SUMS" "$base/SHA256SUMS"
+          (cd "$dir" && grep ' steamos-preflight-x86_64-unknown-linux-gnu$' SHA256SUMS | sha256sum -c -)
+          gh attestation verify "$dir/steamos-preflight-x86_64-unknown-linux-gnu" --repo "$repo" \
+            --signer-workflow "$repo/.github/workflows/release.yml" --source-ref "refs/tags/$ACTION_REF" --deny-self-hosted-runners
+          [[ "$("$dir/steamos-preflight-x86_64-unknown-linux-gnu" --version)" == "steamos-preflight ${ACTION_REF#v}" ]]
+          sudo install -m 0755 "$dir/steamos-preflight-x86_64-unknown-linux-gnu" /usr/local/bin/steamos-preflight
+          rm -rf -- "$dir"
+        else
+          # A commit SHA, a branch or a local checkout: build the exact source.
+          cd "$ACTION_DIR"
+          cargo build --locked --release --quiet
+          sudo install -m 0755 target/release/steamos-preflight /usr/local/bin/steamos-preflight
+        fi
         steamos-preflight --version
 
     - name: Runtime cache key
