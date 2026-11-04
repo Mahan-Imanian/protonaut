@@ -98,20 +98,29 @@ jobs:
           exe: Game.exe
           observe-secs: "12"
           artifact-name: action-healthy
-      - name: Crashing build is caught
+      - name: Crashing build is reported (fail-job false keeps outputs)
         id: crashing
-        continue-on-error: true
         uses: ./
         with:
           build: dist/crashing
           exe: Game.exe
           observe-secs: "12"
           artifact-name: action-crashing
+          fail-job: "false"
+      - name: Crashing build fails the step by default
+        id: crashing-default
+        continue-on-error: true
+        uses: ./
+        with:
+          build: dist/crashing
+          exe: Game.exe
+          observe-secs: "12"
+          artifact-name: ""
       - name: Assert outcomes
         env:
           HEALTHY: ${{ steps.healthy.outputs.verdict }}
           CRASHING: ${{ steps.crashing.outputs.verdict }}
-          CRASHING_OUTCOME: ${{ steps.crashing.outcome }}
+          CRASHING_OUTCOME: ${{ steps.crashing-default.outcome }}
           RESULTS: ${{ steps.healthy.outputs.results }}
         run: |
           echo "healthy=$HEALTHY crashing=$CRASHING crashing-step=$CRASHING_OUTCOME"

@@ -30,6 +30,9 @@ inputs:
   artifact-name:
     description: Name of the uploaded results artifact. Empty to skip the upload.
     default: steamos-preflight-results
+  fail-job:
+    description: "`true` fails this step when the verdict is `fail`. `false` always succeeds so the outputs stay available (GitHub drops a failed composite action's outputs); check `verdict` yourself."
+    default: "true"
 
 outputs:
   verdict:
@@ -55,6 +58,7 @@ runs:
         IN_RESOLUTION: ${{ inputs.resolution }}
         IN_FAIL_ON: ${{ inputs.fail-on }}
         IN_NETWORK: ${{ inputs.network }}
+        IN_FAIL_JOB: ${{ inputs.fail-job }}
       run: |
         set -euo pipefail
         fail() { echo "::error title=SteamOS Preflight::$1"; exit 2; }
@@ -67,6 +71,7 @@ runs:
         [[ "$IN_RESOLUTION" =~ ^(1280x800|1280x720|1920x1080)$ ]] || fail "unsupported resolution"
         [[ "$IN_FAIL_ON" =~ ^(fail|warning)$ ]] || fail "fail-on must be fail or warning"
         [[ "$IN_NETWORK" =~ ^(on|off)$ ]] || fail "network must be on or off"
+        [[ "$IN_FAIL_JOB" =~ ^(true|false)$ ]] || fail "fail-job must be true or false"
 
     - name: Install system packages
       shell: bash
@@ -204,9 +209,15 @@ runs:
       shell: bash
       env:
         CODE: ${{ steps.test.outputs.exit-code }}
+        FAIL_JOB: ${{ inputs.fail-job }}
       run: |
         case "$CODE" in
           0) echo "SteamOS Preflight: no failures." ;;
-          1) echo "::error title=SteamOS Preflight::compatibility failures found; see the job summary"; exit 1 ;;
+          1)
+            if [[ "$FAIL_JOB" == "false" ]]; then
+              echo "::warning title=SteamOS Preflight::compatibility failures found; see the job summary"
+            else
+              echo "::error title=SteamOS Preflight::compatibility failures found; see the job summary"; exit 1
+            fi ;;
           *) echo "::error title=SteamOS Preflight::the test could not run (exit $CODE); see the log above"; exit "${CODE:-3}" ;;
         esac
