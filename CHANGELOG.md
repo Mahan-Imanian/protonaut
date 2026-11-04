@@ -6,12 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Security
+
+- The action kills every process of the sandbox user before reading results, so a build cannot leave a detached process running into later steps.
+- Runtimes are installed by root into a read-only cache, and the sandbox home is recreated for each use.
+- A hostile test build checks in CI that the sandbox blocks the network, the runner's files, CI tokens in `/proc`, `sudo` and escaped processes.
+
 ### Changed
 
 - Licensed under MIT OR Apache-2.0.
 
 ### Added
 
+- Real-game test: OpenTTD 15.3 runs through the action in CI.
+- `docs/roadmap.md`: coverage of Valve's review criteria and the roadmap.
 - `steamos-preflight` CLI: `test` runs a Windows build under pinned GE-Proton builds on a headless Xorg display with software Vulkan, `inspect` runs static checks only, plus `proton`, `report`, `diagnose`, `setup`, `init` and `schema` commands.
 - Static checks for PE architecture, unresolved DLL imports, Steam Input and on-screen keyboard API use, case-colliding paths, anti-cheat files, launchers and video formats.
 - Runtime checks for launch, crashes, early exits, window creation, black or flat frames, letterboxing and extra dialog windows, with a control fixture that verifies screen capture per runtime.

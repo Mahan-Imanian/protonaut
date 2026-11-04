@@ -178,6 +178,13 @@ Version 0.1.0, **experimental**. The CLI, report schema v1 and action
 inputs are documented and versioned, but may still change before 1.0; every
 change is listed in the [changelog](CHANGELOG.md). Verified runtimes and
 known gaps: [docs/compatibility/runtimes.md](docs/compatibility/runtimes.md).
+How the checks map to Valve's review criteria, what is missing and what
+needs hardware: [docs/roadmap.md](docs/roadmap.md).
+
+Besides the synthetic fixtures, CI runs the real open-source game OpenTTD
+15.3 through the action. That testing found a known blind spot: a game that
+shows a fatal error **inside its own window** (OpenTTD without its graphics
+set) is currently reported as passing.
 
 ## Contributing
 
