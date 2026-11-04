@@ -11,6 +11,9 @@ inputs:
   github-token:
     description: Token with pull-requests write access.
     default: ${{ github.token }}
+  comment-author:
+    description: Login that posts the comment; only its own comments are updated. Change it when github-token is not the default GITHUB_TOKEN.
+    default: github-actions[bot]
   artifact-url:
     description: Link to the workflow run's artifacts, shown in the comment.
     default: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -37,6 +40,7 @@ runs:
         REPORT: ${{ inputs.report }}
         PR: ${{ inputs.pr-number }}
         ARTIFACT_URL: ${{ inputs.artifact-url }}
+        AUTHOR: ${{ inputs.comment-author }}
       run: |
         set -euo pipefail
         [[ "$PR" =~ ^[0-9]+$ ]] || { echo "::error::pr-number must be a number"; exit 2; }
@@ -45,9 +49,11 @@ runs:
         # validates it against the schema and escapes every string.
         steamos-preflight report "$REPORT" --format markdown --artifact-url "$ARTIFACT_URL" --out "$body"
         marker='<!-- steamos-preflight-report -->'
-        me=$(gh api user --jq .login 2>/dev/null || echo "github-actions[bot]")
+        # The author is an input, not looked up: the default GITHUB_TOKEN
+        # cannot call /user, and `gh api` prints the error body on stdout.
+        [[ "$AUTHOR" =~ ^[A-Za-z0-9-]+(\[bot\])?$ ]] || { echo "::error::comment-author is not a GitHub login"; exit 2; }
         existing=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR/comments" \
-          --jq ".[] | select(.user.login == \"$me\" and (.body | startswith(\"$marker\"))) | .id" | head -n1 || true)
+          --jq ".[] | select(.user.login == \"$AUTHOR\" and (.body | startswith(\"$marker\"))) | .id" | head -n1 || true)
         if [[ -n "$existing" ]]; then
           if ! gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing" -F body=@"$body" >/dev/null; then
             echo "::warning::could not update the comment (read-only token on a fork PR?)"; exit 0
