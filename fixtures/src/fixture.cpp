@@ -155,7 +155,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE, LPSTR cmd, int) {
         swap->Present(1, 0);
         frames++;
 #if FX_MODE == FX_CRASH
-        if (frames == 60) {
+        if (frames == 180) {
             volatile int zero = 0;
             volatile int boom = frames / zero;
             (void)boom;

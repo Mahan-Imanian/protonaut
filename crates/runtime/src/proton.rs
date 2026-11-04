@@ -25,6 +25,7 @@ const CONTROL_CAPTURE_AT: f64 = 5.0;
 const LOG_LIMIT: u64 = 2 * 1024 * 1024;
 const STOP_GRACE: Duration = Duration::from_secs(5);
 const POLL: Duration = Duration::from_millis(250);
+const WINDOW_POLL: Duration = Duration::from_secs(1);
 /// Mesa's lavapipe ICD manifest; the file name differs between distributions
 /// (Ubuntu 24.04 ships `lvp_icd.json`).
 const LAVAPIPE_ICDS: &[&str] = &[
@@ -245,10 +246,24 @@ impl ProtonBackend<'_> {
             }
         };
         let mut exit = None;
+        let mut next_window_poll = Duration::ZERO;
         while proc.elapsed() < observe {
             if let Some(e) = proc.try_exit()? {
                 exit = Some(e);
                 break;
+            }
+            // Windows are listed often, so a game that crashes early is
+            // still seen to have opened its window.
+            if proc.elapsed() >= next_window_poll {
+                for w in capture::windows(&self.display.name())
+                    .await
+                    .unwrap_or_default()
+                {
+                    if !windows.contains(&w) {
+                        windows.push(w);
+                    }
+                }
+                next_window_poll = proc.elapsed() + WINDOW_POLL;
             }
             if next_capture < capture_times.len()
                 && proc.elapsed().as_secs_f64() >= capture_times[next_capture]

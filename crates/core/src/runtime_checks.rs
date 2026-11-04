@@ -170,12 +170,23 @@ fn window(obs: &RunObservation) -> CheckResult {
                 .map(|w| format!("{:?} {}x{}", w.title, w.width, w.height))
                 .collect(),
         ),
-        None => observed(
+        None if obs.outcome == RunOutcome::Survived => observed(
             "SP-DISP-001",
             title,
             Category::Display,
             Status::Fail,
             "No game window appeared during the observation window.",
+        ),
+        // It ended early; a window may have existed between two checks.
+        None => observed(
+            "SP-DISP-001",
+            title,
+            Category::Display,
+            Status::Unknown,
+            format!(
+                "The game ended after {:.1} s and no window was seen before that.",
+                obs.duration_ms as f64 / 1000.0
+            ),
         ),
     }
 }
@@ -488,6 +499,14 @@ mod tests {
         let mut o = obs(RunOutcome::Survived);
         o.windows.clear();
         assert_eq!(get(&evaluate(&o), "SP-DISP-001").status, Status::Fail);
+        // Regression: a crash before the first window check is not proof
+        // that no window was opened.
+        let mut early = obs(RunOutcome::Crashed);
+        early.windows.clear();
+        assert_eq!(
+            get(&evaluate(&early), "SP-DISP-001").status,
+            Status::Unknown
+        );
         let mut o = obs(RunOutcome::Survived);
         o.windows.push(WindowSeen {
             title: "Error".into(),
