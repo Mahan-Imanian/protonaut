@@ -34,5 +34,9 @@ build fx_dialog 7
 build fx_missing_dll 8 "$tmp/libfx_absent.a"
 build fx_scene 9
 
+# The sandbox probe is plain C and talks to Winsock.
+x86_64-w64-mingw32-gcc -O2 -static -s -mwindows -fno-ident -ffile-prefix-map="$root"=. \
+  -Wl,--no-insert-timestamp -Wl,--build-id=none -o "$out/fx_probe.exe" "$src/probe.c" -lws2_32
+
 ( cd "$out" && sha256sum ./*.exe > SHA256SUMS )
 echo "built $(ls "$out"/*.exe | wc -l) fixtures into fixtures/bin"
