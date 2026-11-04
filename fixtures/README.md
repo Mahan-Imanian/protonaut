@@ -16,8 +16,9 @@ assets are used anywhere in the tests.
 | `fx_letterbox.exe` | Draws a 16:9 picture inside the screen, black bars above and below | Letterbox warning |
 | `fx_dialog.exe` | Opens a small extra window next to the game | Dialog warning |
 | `fx_missing_dll.exe` | Imports `fx_absent.dll`, which does not exist | Missing DLL, static and at runtime |
+| `fx_probe.exe` | Acts like a hostile build: tries the network, the runner's files, CI tokens in `/proc`, `sudo`, and leaves a detached Linux process behind. Writes BLOCKED/OPEN per attempt to `probe-results.txt`, never file contents | Sandbox test in the end-to-end workflow |
 
-All come from [`src/fixture.cpp`](src/fixture.cpp), one `FX_MODE` each.
+All except the probe come from [`src/fixture.cpp`](src/fixture.cpp), one `FX_MODE` each; the probe is [`src/probe.c`](src/probe.c).
 Every program also accepts `--seconds=N` (exit after N seconds) and
 `--report` (write the D3D11 feature level and adapter name to `result.txt`).
 
