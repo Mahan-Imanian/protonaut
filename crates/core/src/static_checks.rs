@@ -1,6 +1,3 @@
-//! Rules that run on the build files alone. Each rule has a stable id; see
-//! `docs/reference/checks.md` for the catalogue.
-
 use std::collections::BTreeSet;
 
 use crate::inspect::{BuildTree, PeArch, PeError, PeInfo};

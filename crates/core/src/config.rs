@@ -1,7 +1,3 @@
-//! `preflight.toml`: the optional configuration file. Every field has a
-//! default except the build directory and executable, which may also come
-//! from the command line.
-
 use std::fmt;
 use std::path::{Component, Path, PathBuf};
 use std::str::FromStr;

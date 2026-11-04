@@ -308,8 +308,8 @@ mod tests {
         assert!(!s.is_black());
     }
 
-    // OCR output captured from real runs: OpenTTD 15.3 without its base
-    // graphics, OpenTTD with software rendering, and a Godot 3D scene.
+    // Tesseract output from real runs: OpenTTD 15.3 without its base graphics,
+    // and OpenTTD with software rendering.
     const OCR_OPENTTD_NOGFX: &str = "WISSING Grapnics\nOpenTTD requires graphics to function but none could be\nfound. Do you allow OpenTTD to download and install\nthese graphics?\nYes, download the graphics\nNo, quit OpenTTD\n";
     const OCR_OPENTTD_VIDEO: &str = "Play EY Scenario\nPeUCIPAlE IT AULOTT ated SUTVEY 7 = Message = SoV +4\nte \u{201c}I wy Error with video settings... en Ek a te.";
 

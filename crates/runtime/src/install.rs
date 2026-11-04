@@ -1,6 +1,3 @@
-//! The pinned runtime manifest, and download + verification + extraction of
-//! runtimes into a local cache.
-
 use std::collections::BTreeSet;
 use std::fs;
 use std::io::Read;

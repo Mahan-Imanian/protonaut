@@ -13,8 +13,9 @@ use tokio::process::{Child, Command};
 
 use crate::RuntimeError;
 
-/// Variables passed to the build under test. Everything else, including
-/// `GITHUB_TOKEN`, `ACTIONS_*` and cloud credentials, is dropped.
+/// `PATH` for the build under test. `Supervised` clears every inherited
+/// variable (`GITHUB_TOKEN`, `ACTIONS_*`, cloud credentials) and passes only
+/// the variables listed in its `Spec`.
 pub const SAFE_PATH: &str = "/usr/local/bin:/usr/bin:/bin";
 
 /// Runs a trusted helper to completion and fails on a nonzero exit.

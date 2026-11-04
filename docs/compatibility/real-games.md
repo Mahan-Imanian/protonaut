@@ -32,8 +32,10 @@ for the Direct3D 12 export and `Vulkan 1.4.318 - Forward+ - Using Device #0:
 | In-window error text | "Missing graphics" (build without graphics) | None | Yes, SP-DISP-005 WARNING since 0.1.0 |
 | Dialogs | A "Fatal Application Failure" window under GE-Proton10-34 only, flagged by SP-DISP-004 | None | Yes; cause not identified (same Wine log errors under both runtimes) |
 
-![OpenTTD title screen](../images/real-openttd.png)
 ![Godot platformer, Direct3D 12 through vkd3d-proton](../images/real-godot-d3d12.png)
+
+Screenshots of every run, including OpenTTD (GPL-2.0 artwork, so not stored
+here), are uploaded as artifacts of the Real games workflow.
 
 ## Problems this testing found
 
@@ -50,8 +52,6 @@ for the Direct3D 12 export and `Vulkan 1.4.318 - Forward+ - Using Device #0:
    with video settings... no compatible GPU found". OCR may report it as a
    WARNING; on a Steam Deck with a real GPU the message would most likely
    not appear.
-
-![OpenTTD without base graphics: now reported as a warning](../images/real-openttd-nogfx.png)
 
 ## Not covered by these games
 
