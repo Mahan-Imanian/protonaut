@@ -58,11 +58,9 @@ item 1 below.
    by a short script, with "did the screen change" as the observation.
    Needs a design for giving the sandbox user access to one virtual device
    without broader device access.
-5. **Prebuilt release binaries for the action**, removing the 75-101 s
-   `cargo build` from every first use.
-6. **gamescope as the display**, closer to SteamOS's compositor (it would
+5. **gamescope as the display**, closer to SteamOS's compositor (it would
    also scale windowed games the way the Deck does).
-7. **More runtimes** as GE-Proton releases, each added only after the
+6. **More runtimes** as GE-Proton releases, each added only after the
    end-to-end suite passes.
 
 ## Future integrations (not planned until there is demand)
@@ -73,7 +71,8 @@ item 1 below.
   for real. The architecture already separates evidence gathering from the
   rules for this (docs/architecture.md).
 - **Valve's own Proton builds**, which are only distributed through Steam
-  and need a Steam login.
+  and need a Steam login (anonymous SteamCMD downloads fail; see
+  [runtimes.md](compatibility/runtimes.md#verified-runtimes)).
 - **Steamworks without a Steam client.** Games that require the Steam API
   to initialise cannot be tested today. Emulating the API raises licensing
   and terms-of-service questions that need an answer before any work.

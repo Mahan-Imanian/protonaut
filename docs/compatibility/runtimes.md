@@ -13,9 +13,28 @@ records what the end-to-end suite observed on Ubuntu 24.04 with Mesa 25.2
 rendered through wined3d (OpenGL), so the gap is in its Vulkan presentation
 path on this display, not in the game.
 
-Valve's own Proton builds are distributed only through Steam and are not
-used. GE-Proton follows Valve's Proton closely but carries extra patches, so
-a game can behave differently on a Steam Deck.
+**GE-Proton is not Valve's Proton.** It is a community build by
+GloriousEggroll that follows Valve's Proton closely but adds patches (extra
+media codecs, game fixes, newer Wine and DXVK commits). A game can behave
+differently under Valve's Proton on a Steam Deck, and a PASS here says
+nothing about Valve's own build.
+
+Valve's Proton builds are distributed through Steam. On 4 November 2026 a
+GitHub-hosted runner tried anonymous SteamCMD downloads
+(`+login anonymous +app_update`):
+
+| Steam app | What it is | Result |
+|---|---|---|
+| 1493710 | Proton Experimental | `Failed to install app '1493710' (Missing configuration)` |
+| 2805730 | Proton 9.0 | `Failed to install app '2805730' (No subscription)` |
+| 1628350 | Steam Linux Runtime 3.0 (sniper), the container Proton runs in | Installed (797 MB) |
+
+So Valve's Proton needs a logged-in Steam account. Storing Steam credentials
+in CI for an unprivileged test tool is not something this project will ask
+users to do, and Valve's builds are not redistributable through this
+project's cache, so they are not supported. Building Proton from Valve's
+source (BSD-3-Clause) is possible but takes hours and a container
+toolchain; it is not planned for 0.1.
 
 ## Environment
 

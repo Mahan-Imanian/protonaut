@@ -19,7 +19,7 @@ Security problems: see [SECURITY.md](SECURITY.md).
 In a GitHub workflow on `ubuntu-24.04`, after your build step:
 
 ```yaml
-- uses: Mahan-Imanian/steamos-preflight@<commit SHA>
+- uses: Mahan-Imanian/steamos-preflight@v0.1.0
   with:
     build: dist/Windows
     exe: MyGame.exe
@@ -73,7 +73,9 @@ shows "Capture: not working", so its screenshot checks are `NOT_TESTED`.*
 1. Your build runs under a pinned, checksum-verified
    [GE-Proton](https://github.com/GloriousEggroll/proton-ge-custom) release
    with Mesa's software Vulkan driver on a headless Xorg display at
-   1280x800, 60 Hz.
+   1280x800, 60 Hz. GE-Proton is a community build, not Valve's Proton;
+   Valve's builds need a Steam login and are not supported
+   ([why](docs/compatibility/runtimes.md#verified-runtimes)).
 2. Before your game, a control program that draws a known colour runs under
    the same runtime. If its frame cannot be captured, screenshot checks are
    reported as `NOT_TESTED` rather than as a false "black screen".
@@ -94,11 +96,11 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@<sha> # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - run: ./build-windows.sh # your build step
-      - uses: Mahan-Imanian/steamos-preflight@<sha>
+      - uses: Mahan-Imanian/steamos-preflight@v0.1.0
         with:
           build: dist/Windows
           exe: MyGame.exe
@@ -117,7 +119,8 @@ comment setup and a [complete example workflow](docs/examples/github-actions.yml
 On Ubuntu 24.04 (or a similar x86-64 Linux):
 
 ```bash
-sudo apt-get install --no-install-recommends xserver-xorg-core xserver-xorg-video-dummy x11-xserver-utils x11-utils imagemagick mesa-vulkan-drivers python3 curl tesseract-ocr tesseract-ocr-eng
+sudo dpkg --add-architecture i386 && sudo apt-get update
+sudo apt-get install --no-install-recommends xserver-xorg-core xserver-xorg-video-dummy x11-xserver-utils x11-utils imagemagick mesa-vulkan-drivers python3 curl tesseract-ocr tesseract-ocr-eng libc6:i386 libx11-6:i386 libxext6:i386 libxrandr2:i386 libxi6:i386 libxcursor1:i386 libxinerama1:i386 libxcomposite1:i386 libxrender1:i386 libxfixes3:i386 libfreetype6:i386 libfontconfig1:i386 libvulkan1:i386 mesa-vulkan-drivers:i386
 ```
 
 ```bash
