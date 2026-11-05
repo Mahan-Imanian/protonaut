@@ -38,9 +38,9 @@ what happened on the device. These reports are how the checks get better.
 
 ## Licensing of contributions
 
-Protonaut is licensed under MIT OR Apache-2.0. Unless you explicitly
+Protonaut is licensed under Apache-2.0. Unless you explicitly
 state otherwise, any contribution intentionally submitted for inclusion by
-you, as defined in the Apache-2.0 license, shall be dual licensed as above,
+you, as defined in the Apache-2.0 license, shall be licensed the same way,
 without any additional terms or conditions.
 
 ## Conduct
