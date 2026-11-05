@@ -20,6 +20,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Workflow recipes for Godot, Unity and Unreal in `docs/recipes.md`.
 - A project website, published from `site/`.
 - PR comments and HTML reports link back to the project.
+- `protonaut test` prints live progress and ends with a colored GO or NO-GO verdict.
+
+### Changed in text output
+
+- `protonaut test` lists failures last, above the verdict, and shows detail only for failures and warnings. The full detail stays in `report.html` and `report.json`.
 
 ## [0.1.1] - 2026-11-05
 

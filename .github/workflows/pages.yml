@@ -32,7 +32,7 @@ jobs:
       - name: Assemble site
         run: |
           mkdir -p site/assets
-          cp -r docs/assets/fonts docs/assets/patch.png docs/assets/favicon.png docs/assets/social-preview.png site/assets/
+          cp -r docs/assets/fonts docs/assets/patch.png docs/assets/favicon.png docs/assets/social-preview.png docs/assets/pr-comment.png docs/assets/demo.gif site/assets/
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

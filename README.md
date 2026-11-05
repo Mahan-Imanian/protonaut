@@ -20,7 +20,7 @@ Protonaut runs your build under pinned GE-Proton on a headless Linux display in 
 [All checks](docs/reference/checks.md) ·
 [Changelog](CHANGELOG.md)
 
-<img src="docs/assets/demo.gif" alt="A terminal running protonaut test on a build that crashes under Proton: the checks scroll past and the run ends with failures" width="860">
+<img src="docs/assets/demo.gif" alt="A terminal running protonaut test on a build that crashes under Proton. The run ends in a NO-GO verdict with two failures." width="860">
 
 </div>
 
@@ -64,6 +64,8 @@ Protonaut narrows what reaches a person. It does not replace the review or a dev
 ## What it catches
 
 <img src="docs/assets/pr-comment.png" alt="A pull request comment from Protonaut listing a failed crash check on a real test build" width="860">
+
+<sub>From the live [demo pull request](https://github.com/Mahan-Imanian/protonaut-demo/pull/1). The build is one of the project's test programs, not a real game.</sub>
 
 | | Examples |
 |---|---|
