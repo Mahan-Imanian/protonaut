@@ -16,4 +16,5 @@ page patch.tpl "$out/p.html"; ./render.sh "$out/p.html" ../patch.png 1024 1024
 page wordmark-dark.tpl "$out/d.html"; ./render.sh "$out/d.html" ../wordmark-dark.png 1040 220
 page wordmark-light.tpl "$out/l.html"; ./render.sh "$out/l.html" ../wordmark-light.png 1040 220
 page social.tpl "$out/s.html"; ./render.sh "$out/s.html" ../social-preview.png 1280 640
+page card.tpl "$out/c.html"; ./render.sh "$out/c.html" ../profile-card.png 2000 620
 ffmpeg -y -loglevel error -i ../patch.png -vf scale=64:64 ../favicon.png
