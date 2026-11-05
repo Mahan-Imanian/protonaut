@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-05
+
+### Changed
+
+- **Renamed to Protonaut.** The repository, crates, `protonaut` binary, `protonaut.toml`, `PROTONAUT_*` environment variables, `protonaut-results/` directory and release asset all use the new name. The old action path redirects, but update your workflows to `Mahan-Imanian/protonaut`.
+- Check IDs now start with `PN-` instead of `SP-`. Update any ignore lists in your config.
+
+### Added
+
+- `@v0` action ref that follows the latest 0.x release and still verifies the checksum and provenance of the binary.
+- `install.sh`, with `--with-deps` to install the system packages on apt-based systems.
+- Workflow recipes for Godot, Unity and Unreal in `docs/recipes.md`.
+- A project website, published from `site/`.
+- PR comments and HTML reports link back to the project.
+- `protonaut test` prints live progress and ends with a colored GO or NO-GO verdict.
+
+### Changed in text output
+
+- `protonaut test` lists failures last, above the verdict, and shows detail only for failures and warnings. The full detail stays in `report.html` and `report.json`.
+
 ## [0.1.1] - 2026-11-05
 
 ### Fixed
@@ -42,6 +62,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - GitHub Action (`uses: Mahan-Imanian/steamos-preflight@<ref>`) that runs the build as an unprivileged user with no network and no CI token, uploads results and writes a job summary (`fail-job: "false"` keeps its outputs available), plus a `comment` action that posts or updates one PR comment from `report.json`.
 - Reproducible Windows test fixtures and an end-to-end suite covering crash, startup failure, missing asset, missing DLL, black screen, letterbox and dialog cases.
 
-[Unreleased]: https://github.com/Mahan-Imanian/steamos-preflight/compare/v0.1.1...HEAD
-[0.1.1]: https://github.com/Mahan-Imanian/steamos-preflight/releases/tag/v0.1.1
-[0.1.0]: https://github.com/Mahan-Imanian/steamos-preflight/releases/tag/v0.1.0
+[Unreleased]: https://github.com/Mahan-Imanian/protonaut/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Mahan-Imanian/protonaut/releases/tag/v0.2.0
+[0.1.1]: https://github.com/Mahan-Imanian/protonaut/releases/tag/v0.1.1
+[0.1.0]: https://github.com/Mahan-Imanian/protonaut/releases/tag/v0.1.0

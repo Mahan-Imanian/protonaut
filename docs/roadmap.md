@@ -1,6 +1,6 @@
 # Coverage and roadmap
 
-How SteamOS Preflight's checks line up with what Valve reviews, what is
+How Protonaut's checks line up with what Valve reviews, what is
 verified, what is only a heuristic, what is missing, and what can never run
 on a CI runner. Valve's criteria are taken from the Steamworks
 [compatibility review documentation](https://partner.steamgames.com/doc/steamhardware/compat).
@@ -12,30 +12,30 @@ be automated on a CI runner, not built yet. *Hardware*: needs a real device.
 
 ## Valve's criteria
 
-| Valve criterion | What SteamOS Preflight does | Status | Evidence / gap |
+| Valve criterion | What Protonaut does | Status | Evidence / gap |
 |---|---|---|---|
-| **Proton: no blocking bugs** (game starts and runs) | SP-RUN-001/002/003: launch, stays up for the observation window, no crash signatures | Verified | Crash, startup failure, missing asset and missing DLL fixtures; OpenTTD 15.3 and a Godot 4.7.2 game (Vulkan and Direct3D 12 exports) run 40 s under two runtimes ([real-game results](compatibility/real-games.md)) |
-| Proton: middleware it does not support (anti-cheat) | SP-AC-001 flags known anti-cheat files | Heuristic | Detection only; cannot know whether the vendor's Proton support is enabled |
-| Proton: middleware (media codecs) | SP-MEDIA-001 flags formats usually decoded by Media Foundation | Heuristic | Static only; playback is not verified at runtime |
-| **Display: supported resolution (1280x800 or 1280x720)** | Runs at 1280x800; SP-DISP-003 reports a game window smaller than the display (observed) or black bars (heuristic) | Partly verified | Window size verified with OpenTTD (960x600) and Godot (1152x648). Whether the game's own resolution setting defaults correctly is not read |
-| Display: smallest text ≥ 9 px at 1280x800 | SP-HW-003, always NOT_TESTED | Missing | OCR now runs (SP-DISP-005), but text height is not measured |
-| **Input: full controller support in the default configuration** | SP-HW-002, always NOT_TESTED | Missing | Needs injected gamepad input and a check that the game reacts |
-| Input: controller glyphs match the device | SP-STEAM-001 reports Steam Input flat-API imports | Heuristic | `UNKNOWN` for interface-based Steam Input and for engines that load it from a plugin. Glyphs on screen are not read |
-| Input: text entry opens the on-screen keyboard | SP-STEAM-002 reports the Steamworks text-input imports | Heuristic | Same limits as above |
-| **Seamlessness: no "unsupported OS/GPU" warnings** | SP-DISP-004 flags small OS-level windows; SP-DISP-005 reads the screen with OCR and flags error language | Heuristic, partly verified | SP-DISP-004 caught a real "Fatal Application Failure" window (OpenTTD under GE-Proton10-34). SP-DISP-005 catches OpenTTD's in-window "Missing graphics" message and a fixture's in-window fatal error; it reads only words, so a warning with stylised text or an icon-only message can be missed |
-| Seamlessness: launchers are controller-navigable | SP-LAUNCH-001 flags launcher-like executables | Heuristic | Launcher navigation is not tested |
-| **Performance: 30 fps at default settings** | SP-HW-001, always NOT_TESTED | Hardware | CPU software rendering says nothing about Deck or Steam Machine frame rates |
+| **Proton: no blocking bugs** (game starts and runs) | PN-RUN-001/002/003: launch, stays up for the observation window, no crash signatures | Verified | Crash, startup failure, missing asset and missing DLL fixtures; OpenTTD 15.3 and a Godot 4.7.2 game (Vulkan and Direct3D 12 exports) run 40 s under two runtimes ([real-game results](compatibility/real-games.md)) |
+| Proton: middleware it does not support (anti-cheat) | PN-AC-001 flags known anti-cheat files | Heuristic | Detection only; cannot know whether the vendor's Proton support is enabled |
+| Proton: middleware (media codecs) | PN-MEDIA-001 flags formats usually decoded by Media Foundation | Heuristic | Static only; playback is not verified at runtime |
+| **Display: supported resolution (1280x800 or 1280x720)** | Runs at 1280x800; PN-DISP-003 reports a game window smaller than the display (observed) or black bars (heuristic) | Partly verified | Window size verified with OpenTTD (960x600) and Godot (1152x648). Whether the game's own resolution setting defaults correctly is not read |
+| Display: smallest text ≥ 9 px at 1280x800 | PN-HW-003, always NOT_TESTED | Missing | OCR now runs (PN-DISP-005), but text height is not measured |
+| **Input: full controller support in the default configuration** | PN-HW-002, always NOT_TESTED | Missing | Needs injected gamepad input and a check that the game reacts |
+| Input: controller glyphs match the device | PN-STEAM-001 reports Steam Input flat-API imports | Heuristic | `UNKNOWN` for interface-based Steam Input and for engines that load it from a plugin. Glyphs on screen are not read |
+| Input: text entry opens the on-screen keyboard | PN-STEAM-002 reports the Steamworks text-input imports | Heuristic | Same limits as above |
+| **Seamlessness: no "unsupported OS/GPU" warnings** | PN-DISP-004 flags small OS-level windows; PN-DISP-005 reads the screen with OCR and flags error language | Heuristic, partly verified | PN-DISP-004 caught a real "Fatal Application Failure" window (OpenTTD under GE-Proton10-34). PN-DISP-005 catches OpenTTD's in-window "Missing graphics" message and a fixture's in-window fatal error; it reads only words, so a warning with stylised text or an icon-only message can be missed |
+| Seamlessness: launchers are controller-navigable | PN-LAUNCH-001 flags launcher-like executables | Heuristic | Launcher navigation is not tested |
+| **Performance: 30 fps at default settings** | PN-HW-001, always NOT_TESTED | Hardware | CPU software rendering says nothing about Deck or Steam Machine frame rates |
 
-Beyond Valve's list, SteamOS Preflight also checks PE architecture
-(SP-PE-002), unresolved DLL imports (SP-PE-003, verified exactly against
-`objdump` for OpenTTD's 14 imports) and case-colliding files (SP-FS-001).
+Beyond Valve's list, Protonaut also checks PE architecture
+(PN-PE-002), unresolved DLL imports (PN-PE-003, verified exactly against
+`objdump` for OpenTTD's 14 imports) and case-colliding files (PN-FS-001).
 
 ## Errors a game draws inside its own window
 
 OpenTTD without its base graphics set shows "Missing graphics: OpenTTD
 requires graphics to function" **inside its own window** and keeps running,
 so every process and window check passes. Before 0.1.0 this was reported as
-a clean pass. SP-DISP-005 now reads the representative frame with Tesseract
+a clean pass. PN-DISP-005 now reads the representative frame with Tesseract
 OCR and reports error language as a WARNING, and the summary reads "No
 failures, N warnings to review" instead of a plain pass. OCR is a
 heuristic: stylised fonts, very small text or a message shown only before
@@ -49,7 +49,7 @@ item 1 below.
    would have caught the missing-graphics build, works for any engine, and
    needs no game-specific knowledge. Open question: animated title screens
    need a tolerant comparison or a fixed capture time.
-2. **Text height from OCR.** SP-DISP-005 already runs OCR for error
+2. **Text height from OCR.** PN-DISP-005 already runs OCR for error
    language; measuring the smallest text height would cover Valve's 9 px
    rule.
 3. **Game arguments in the action** (already in the CLI), so studios can
@@ -82,5 +82,5 @@ item 1 below.
 Frame rate and frame pacing, GPU driver behaviour, thermal throttling,
 battery use, suspend and resume, touchscreen input, the physical feel of the
 controls, and anything that depends on the Steam client overlay. A software
-renderer on a CI runner cannot stand in for these, and SteamOS Preflight
+renderer on a CI runner cannot stand in for these, and Protonaut
 reports them as `NOT_TESTED` rather than guessing.

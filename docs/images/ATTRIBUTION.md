@@ -1,8 +1,8 @@
 # Image attribution
 
-- `report.png` shows a SteamOS Preflight report for this project's own
+- `report.png` shows a Protonaut report for this project's own
   test fixture (MIT OR Apache-2.0, like the rest of this repository).
-- `real-godot-d3d12.png` is a frame captured by SteamOS Preflight from the
+- `real-godot-d3d12.png` is a frame captured by Protonaut from the
   "Platformer 3D" demo of
   [godot-demo-projects](https://github.com/godotengine/godot-demo-projects),
   exported with Godot 4.7.2. It is used under the MIT License:

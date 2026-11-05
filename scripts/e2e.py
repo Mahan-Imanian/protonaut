@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Runs every fixture through `steamos-preflight test` and compares the
+"""Runs every fixture through `protonaut test` and compares the
 reports with tests/e2e/expectations.toml. Standard library only.
 
-    scripts/e2e.py --bin target/release/steamos-preflight --runtime ge-proton11-12
+    scripts/e2e.py --bin target/release/protonaut --runtime ge-proton11-12
 
 Exit status 0 when every expectation holds, 1 otherwise.
 """
@@ -16,7 +16,7 @@ import time
 import tomllib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-FRAME_CHECKS = {"SP-DISP-002", "SP-DISP-003", "SP-DISP-005"}
+FRAME_CHECKS = {"PN-DISP-002", "PN-DISP-003", "PN-DISP-005"}
 
 
 def find_leaks(results: pathlib.Path, paths: list[str]) -> list[str]:

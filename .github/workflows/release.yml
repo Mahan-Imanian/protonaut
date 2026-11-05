@@ -33,7 +33,7 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          version=$(cargo metadata --format-version 1 --no-deps | python3 -c "import json,sys; print(next(p['version'] for p in json.load(sys.stdin)['packages'] if p['name']=='steamos-preflight'))")
+          version=$(cargo metadata --format-version 1 --no-deps | python3 -c "import json,sys; print(next(p['version'] for p in json.load(sys.stdin)['packages'] if p['name']=='protonaut'))")
           [[ "$TAG" == "v$version" ]] || { echo "::error::tag $TAG does not match crate version $version"; exit 1; }
       - name: Test tools
         run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends imagemagick tesseract-ocr tesseract-ocr-eng fonts-dejavu-core
@@ -44,14 +44,14 @@ jobs:
         run: |
           RUSTFLAGS="--remap-path-prefix=$PWD=. --remap-path-prefix=$HOME=~" cargo build --locked --release
           mkdir -p dist
-          install -m 0755 target/release/steamos-preflight dist/steamos-preflight-x86_64-unknown-linux-gnu
+          install -m 0755 target/release/protonaut dist/protonaut-x86_64-unknown-linux-gnu
           cargo metadata --format-version 1 --locked > dist/cargo-metadata.json
-          (cd dist && sha256sum steamos-preflight-x86_64-unknown-linux-gnu cargo-metadata.json > SHA256SUMS)
+          (cd dist && sha256sum protonaut-x86_64-unknown-linux-gnu cargo-metadata.json > SHA256SUMS)
           cat dist/SHA256SUMS
-          dist/steamos-preflight-x86_64-unknown-linux-gnu --version
+          dist/protonaut-x86_64-unknown-linux-gnu --version
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: dist/steamos-preflight-x86_64-unknown-linux-gnu
+          subject-path: dist/protonaut-x86_64-unknown-linux-gnu
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-dist
@@ -76,7 +76,7 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           (cd dist && sha256sum -c SHA256SUMS)
-          gh attestation verify dist/steamos-preflight-x86_64-unknown-linux-gnu --repo "$GITHUB_REPOSITORY" \
+          gh attestation verify dist/protonaut-x86_64-unknown-linux-gnu --repo "$GITHUB_REPOSITORY" \
             --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/release.yml" --source-ref "refs/tags/$TAG" --deny-self-hosted-runners
       - name: Create draft release
         env:
