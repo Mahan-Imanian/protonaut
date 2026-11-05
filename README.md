@@ -19,7 +19,7 @@ Security problems: see [SECURITY.md](SECURITY.md).
 In a GitHub workflow on `ubuntu-24.04`, after your build step:
 
 ```yaml
-- uses: Mahan-Imanian/steamos-preflight@v0.1.0
+- uses: Mahan-Imanian/steamos-preflight@v0.1.1
   with:
     build: dist/Windows
     exe: MyGame.exe
@@ -32,8 +32,8 @@ Install the release binary (built on Ubuntu 22.04, needs glibc 2.35 or
 newer) after checking its checksum and build provenance:
 
 ```bash
-curl -fLO https://github.com/Mahan-Imanian/steamos-preflight/releases/download/v0.1.0/steamos-preflight-x86_64-unknown-linux-gnu
-curl -fLO https://github.com/Mahan-Imanian/steamos-preflight/releases/download/v0.1.0/SHA256SUMS
+curl -fLO https://github.com/Mahan-Imanian/steamos-preflight/releases/download/v0.1.1/steamos-preflight-x86_64-unknown-linux-gnu
+curl -fLO https://github.com/Mahan-Imanian/steamos-preflight/releases/download/v0.1.1/SHA256SUMS
 sha256sum -c --ignore-missing SHA256SUMS
 gh attestation verify steamos-preflight-x86_64-unknown-linux-gnu --repo Mahan-Imanian/steamos-preflight
 sudo install -m 0755 steamos-preflight-x86_64-unknown-linux-gnu /usr/local/bin/steamos-preflight
@@ -42,7 +42,7 @@ sudo install -m 0755 steamos-preflight-x86_64-unknown-linux-gnu /usr/local/bin/s
 or build it from source:
 
 ```bash
-cargo install --locked --git https://github.com/Mahan-Imanian/steamos-preflight --tag v0.1.0 steamos-preflight
+cargo install --locked --git https://github.com/Mahan-Imanian/steamos-preflight --tag v0.1.1 steamos-preflight
 ```
 
 ```bash
@@ -113,7 +113,7 @@ jobs:
         with:
           persist-credentials: false
       - run: ./build-windows.sh # your build step
-      - uses: Mahan-Imanian/steamos-preflight@v0.1.0
+      - uses: Mahan-Imanian/steamos-preflight@v0.1.1
         with:
           build: dist/Windows
           exe: MyGame.exe
@@ -190,7 +190,7 @@ of host paths. What this does and does not protect against:
 
 ## Status
 
-Version 0.1.0, **experimental**. The CLI, report schema v1 and action
+Version 0.1.1, **experimental**. The CLI, report schema v1 and action
 inputs are documented and versioned, but may still change before 1.0; every
 change is listed in the [changelog](CHANGELOG.md). Verified runtimes and
 known gaps: [docs/compatibility/runtimes.md](docs/compatibility/runtimes.md).

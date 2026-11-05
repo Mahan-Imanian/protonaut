@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-05
+
+### Fixed
+
+- The action's install step failed with `Permission denied` on every `vX.Y.Z` ref, because it ran the downloaded binary without making it executable. Use `@v0.1.1`; the action at `@v0.1.0` does not work. The `v0.1.0` CLI binary is not affected.
+
 ## [0.1.0] - 2026-11-04
 
 ### Security
@@ -36,5 +42,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - GitHub Action (`uses: Mahan-Imanian/steamos-preflight@<ref>`) that runs the build as an unprivileged user with no network and no CI token, uploads results and writes a job summary (`fail-job: "false"` keeps its outputs available), plus a `comment` action that posts or updates one PR comment from `report.json`.
 - Reproducible Windows test fixtures and an end-to-end suite covering crash, startup failure, missing asset, missing DLL, black screen, letterbox and dialog cases.
 
-[Unreleased]: https://github.com/Mahan-Imanian/steamos-preflight/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Mahan-Imanian/steamos-preflight/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/Mahan-Imanian/steamos-preflight/releases/tag/v0.1.1
 [0.1.0]: https://github.com/Mahan-Imanian/steamos-preflight/releases/tag/v0.1.0
