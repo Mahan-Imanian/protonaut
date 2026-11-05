@@ -41,7 +41,7 @@ the committed binaries differ from the source.
 
 ## Licensing
 
-The fixture sources are part of Protonaut (MIT OR Apache-2.0). The
+The fixture sources are part of Protonaut (Apache-2.0). The
 binaries are statically linked with the MinGW-w64 runtime and GCC's
 libstdc++, which the GCC Runtime Library Exception and the MinGW-w64
 runtime licences allow to be distributed in compiled programs.
