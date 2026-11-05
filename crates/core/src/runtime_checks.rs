@@ -38,14 +38,14 @@ fn launch(obs: &RunObservation) -> CheckResult {
     let title = "Game process starts under Proton";
     let c = match obs.outcome {
         RunOutcome::LaunchFailed => observed(
-            "SP-RUN-001",
+            "PN-RUN-001",
             title,
             Category::Runtime,
             Status::Fail,
             "The runtime could not start the executable.",
         ),
         _ if !obs.log.missing_dlls.is_empty() => observed(
-            "SP-RUN-001",
+            "PN-RUN-001",
             title,
             Category::Runtime,
             Status::Fail,
@@ -53,7 +53,7 @@ fn launch(obs: &RunObservation) -> CheckResult {
         )
         .with_details(obs.log.missing_dlls.clone()),
         _ => observed(
-            "SP-RUN-001",
+            "PN-RUN-001",
             title,
             Category::Runtime,
             Status::Pass,
@@ -68,14 +68,14 @@ fn stability(obs: &RunObservation) -> CheckResult {
     let secs = obs.duration_ms as f64 / 1000.0;
     let c = match obs.outcome {
         RunOutcome::Survived => observed(
-            "SP-RUN-002",
+            "PN-RUN-002",
             title,
             Category::Runtime,
             Status::Pass,
             format!("Still running after {} s.", obs.observe_secs),
         ),
         RunOutcome::ExitedCleanly => observed(
-            "SP-RUN-002",
+            "PN-RUN-002",
             title,
             Category::Runtime,
             Status::Warning,
@@ -85,7 +85,7 @@ fn stability(obs: &RunObservation) -> CheckResult {
             ),
         ),
         RunOutcome::ExitedWithError => observed(
-            "SP-RUN-002",
+            "PN-RUN-002",
             title,
             Category::Runtime,
             Status::Fail,
@@ -95,7 +95,7 @@ fn stability(obs: &RunObservation) -> CheckResult {
             ),
         ),
         RunOutcome::Crashed => observed(
-            "SP-RUN-002",
+            "PN-RUN-002",
             title,
             Category::Runtime,
             Status::Fail,
@@ -103,7 +103,7 @@ fn stability(obs: &RunObservation) -> CheckResult {
         )
         .with_details(obs.log.crashes.clone()),
         RunOutcome::LaunchFailed => observed(
-            "SP-RUN-002",
+            "PN-RUN-002",
             title,
             Category::Runtime,
             Status::NotTested,
@@ -117,7 +117,7 @@ fn log_errors(obs: &RunObservation) -> CheckResult {
     let title = "No crash signatures in the runtime log";
     let c = if obs.log.crashes.is_empty() {
         observed(
-            "SP-RUN-003",
+            "PN-RUN-003",
             title,
             Category::Runtime,
             Status::Pass,
@@ -125,7 +125,7 @@ fn log_errors(obs: &RunObservation) -> CheckResult {
         )
     } else {
         observed(
-            "SP-RUN-003",
+            "PN-RUN-003",
             title,
             Category::Runtime,
             Status::Fail,
@@ -143,7 +143,7 @@ fn window(obs: &RunObservation) -> CheckResult {
     let title = "Game opens a window";
     if obs.outcome == RunOutcome::LaunchFailed {
         return observed(
-            "SP-DISP-001",
+            "PN-DISP-001",
             title,
             Category::Display,
             Status::NotTested,
@@ -160,7 +160,7 @@ fn window(obs: &RunObservation) -> CheckResult {
         .max_by_key(|w| u64::from(w.width) * u64::from(w.height))
     {
         Some(w) => observed(
-            "SP-DISP-001",
+            "PN-DISP-001",
             title,
             Category::Display,
             Status::Pass,
@@ -172,7 +172,7 @@ fn window(obs: &RunObservation) -> CheckResult {
                 .collect(),
         ),
         None if obs.outcome == RunOutcome::Survived => observed(
-            "SP-DISP-001",
+            "PN-DISP-001",
             title,
             Category::Display,
             Status::Fail,
@@ -180,7 +180,7 @@ fn window(obs: &RunObservation) -> CheckResult {
         ),
         // It ended early; a window may have existed between two checks.
         None => observed(
-            "SP-DISP-001",
+            "PN-DISP-001",
             title,
             Category::Display,
             Status::Unknown,
@@ -194,8 +194,8 @@ fn window(obs: &RunObservation) -> CheckResult {
 
 fn display_checks(obs: &RunObservation) -> Vec<CheckResult> {
     let ids = [
-        ("SP-DISP-002", "Game renders visible content"),
-        ("SP-DISP-003", "Game fills the screen"),
+        ("PN-DISP-002", "Game renders visible content"),
+        ("PN-DISP-003", "Game fills the screen"),
     ];
     let not_tested = |why: &str| -> Vec<CheckResult> {
         ids.iter()
@@ -326,7 +326,7 @@ fn display_checks(obs: &RunObservation) -> Vec<CheckResult> {
 
 /// Uses only the window list, so it does not depend on screen capture.
 fn dialog_check(obs: &RunObservation) -> CheckResult {
-    let ids = [("SP-DISP-004", "No startup dialog or extra window")];
+    let ids = [("PN-DISP-004", "No startup dialog or extra window")];
     if obs.outcome == RunOutcome::LaunchFailed {
         return CheckResult::new(
             ids[0].0,
@@ -363,7 +363,7 @@ fn dialog_check(obs: &RunObservation) -> CheckResult {
 /// (OpenTTD without its graphics set does). OCR is the only signal for that,
 /// so the result is a heuristic WARNING, never FAIL.
 fn screen_text_check(obs: &RunObservation) -> CheckResult {
-    let (id, title) = ("SP-DISP-005", "No error message on screen");
+    let (id, title) = ("PN-DISP-005", "No error message on screen");
     let not_tested = |why: String| {
         CheckResult::new(
             id,
@@ -408,9 +408,9 @@ fn screen_text_check(obs: &RunObservation) -> CheckResult {
 
 fn hardware_not_tested(_obs: &RunObservation) -> Vec<CheckResult> {
     [
-        ("SP-HW-001", "Frame rate at default settings", "Valve's 30 fps target needs real Deck or Steam Machine hardware; this run uses CPU software rendering."),
-        ("SP-HW-002", "Controller-only play", "Needs a person with a controller, or scripted input, which this version does not provide."),
-        ("SP-HW-003", "Text legible at 1280x800", "Text size is not measured in this version (OCR is used only to find error messages)."),
+        ("PN-HW-001", "Frame rate at default settings", "Valve's 30 fps target needs real Deck or Steam Machine hardware; this run uses CPU software rendering."),
+        ("PN-HW-002", "Controller-only play", "Needs a person with a controller, or scripted input, which this version does not provide."),
+        ("PN-HW-003", "Text legible at 1280x800", "Text size is not measured in this version (OCR is used only to find error messages)."),
     ]
     .into_iter()
     .map(|(id, title, why)| CheckResult::new(id, title, Category::Hardware, Status::NotTested, Evidence::None, why))
@@ -471,17 +471,17 @@ mod tests {
     fn healthy_run_passes_and_hardware_is_not_tested() {
         let r = evaluate(&obs(RunOutcome::Survived));
         for id in [
-            "SP-RUN-001",
-            "SP-RUN-002",
-            "SP-RUN-003",
-            "SP-DISP-001",
-            "SP-DISP-002",
-            "SP-DISP-003",
-            "SP-DISP-004",
+            "PN-RUN-001",
+            "PN-RUN-002",
+            "PN-RUN-003",
+            "PN-DISP-001",
+            "PN-DISP-002",
+            "PN-DISP-003",
+            "PN-DISP-004",
         ] {
             assert_eq!(get(&r, id).status, Status::Pass, "{id}");
         }
-        for id in ["SP-HW-001", "SP-HW-002", "SP-HW-003"] {
+        for id in ["PN-HW-001", "PN-HW-002", "PN-HW-003"] {
             assert_eq!(get(&r, id).status, Status::NotTested, "{id}");
         }
         assert!(
@@ -495,17 +495,17 @@ mod tests {
         let mut o = obs(RunOutcome::Crashed);
         o.log.crashes = vec!["wine: Unhandled page fault".into()];
         let r = evaluate(&o);
-        assert_eq!(get(&r, "SP-RUN-002").status, Status::Fail);
-        assert_eq!(get(&r, "SP-RUN-003").status, Status::Fail);
+        assert_eq!(get(&r, "PN-RUN-002").status, Status::Fail);
+        assert_eq!(get(&r, "PN-RUN-003").status, Status::Fail);
     }
 
     #[test]
     fn nonzero_exit_fails_and_clean_early_exit_warns() {
         let mut o = obs(RunOutcome::ExitedWithError);
         o.exit_code = Some(3);
-        assert_eq!(get(&evaluate(&o), "SP-RUN-002").status, Status::Fail);
+        assert_eq!(get(&evaluate(&o), "PN-RUN-002").status, Status::Fail);
         assert_eq!(
-            get(&evaluate(&obs(RunOutcome::ExitedCleanly)), "SP-RUN-002").status,
+            get(&evaluate(&obs(RunOutcome::ExitedCleanly)), "PN-RUN-002").status,
             Status::Warning
         );
     }
@@ -514,7 +514,7 @@ mod tests {
     fn missing_dll_in_log_fails_launch() {
         let mut o = obs(RunOutcome::ExitedWithError);
         o.log.missing_dlls = vec!["fx_absent.dll".into()];
-        assert_eq!(get(&evaluate(&o), "SP-RUN-001").status, Status::Fail);
+        assert_eq!(get(&evaluate(&o), "PN-RUN-001").status, Status::Fail);
     }
 
     #[test]
@@ -523,23 +523,23 @@ mod tests {
         o.capture_verified = Some(false);
         o.screenshots[0].stats = stats(true, true, Bars::default());
         let r = evaluate(&o);
-        for id in ["SP-DISP-002", "SP-DISP-003"] {
+        for id in ["PN-DISP-002", "PN-DISP-003"] {
             assert_eq!(get(&r, id).status, Status::NotTested, "{id}");
         }
         // The dialog check reads the window list, not pixels.
-        assert_eq!(get(&r, "SP-DISP-004").status, Status::Pass);
+        assert_eq!(get(&r, "PN-DISP-004").status, Status::Pass);
     }
 
     #[test]
     fn black_frame_is_a_heuristic_warning() {
         let mut o = obs(RunOutcome::Survived);
         o.screenshots[0].stats = stats(true, true, Bars::default());
-        let c = get(&evaluate(&o), "SP-DISP-002");
+        let c = get(&evaluate(&o), "PN-DISP-002");
         assert_eq!(
             (c.status, c.evidence),
             (Status::Warning, Evidence::Heuristic)
         );
-        assert_eq!(get(&evaluate(&o), "SP-DISP-003").status, Status::Unknown);
+        assert_eq!(get(&evaluate(&o), "PN-DISP-003").status, Status::Unknown);
     }
 
     #[test]
@@ -560,7 +560,7 @@ mod tests {
                 right: 160,
             },
         );
-        let c = get(&evaluate(&o), "SP-DISP-003");
+        let c = get(&evaluate(&o), "PN-DISP-003");
         assert_eq!(
             (c.status, c.evidence),
             (Status::Warning, Evidence::Observed)
@@ -573,7 +573,7 @@ mod tests {
             width: 400,
             height: 150,
         });
-        assert_eq!(get(&evaluate(&o), "SP-DISP-003").status, Status::Pass);
+        assert_eq!(get(&evaluate(&o), "PN-DISP-003").status, Status::Pass);
     }
 
     #[test]
@@ -588,12 +588,12 @@ mod tests {
                     .into(),
         };
         let r = evaluate(&o);
-        let c = get(&r, "SP-DISP-005");
+        let c = get(&r, "PN-DISP-005");
         assert_eq!(
             (c.status, c.evidence),
             (Status::Warning, Evidence::Heuristic)
         );
-        assert_eq!(get(&r, "SP-RUN-002").status, Status::Pass);
+        assert_eq!(get(&r, "PN-RUN-002").status, Status::Pass);
         assert_eq!(
             crate::model::verdict(&r, crate::model::FailOn::Warning),
             crate::model::Verdict::Fail
@@ -604,12 +604,12 @@ mod tests {
     fn screen_text_is_not_tested_without_ocr_or_capture() {
         let mut o = obs(RunOutcome::Survived);
         o.screen_text = ScreenText::NotRead("tesseract is not installed".into());
-        assert_eq!(get(&evaluate(&o), "SP-DISP-005").status, Status::NotTested);
+        assert_eq!(get(&evaluate(&o), "PN-DISP-005").status, Status::NotTested);
         let mut o = obs(RunOutcome::Survived);
         o.capture_verified = Some(false);
-        assert_eq!(get(&evaluate(&o), "SP-DISP-005").status, Status::NotTested);
+        assert_eq!(get(&evaluate(&o), "PN-DISP-005").status, Status::NotTested);
         assert_eq!(
-            get(&evaluate(&obs(RunOutcome::Survived)), "SP-DISP-005").status,
+            get(&evaluate(&obs(RunOutcome::Survived)), "PN-DISP-005").status,
             Status::Pass
         );
     }
@@ -627,20 +627,20 @@ mod tests {
                 right: 0,
             },
         );
-        assert_eq!(get(&evaluate(&o), "SP-DISP-003").status, Status::Warning);
+        assert_eq!(get(&evaluate(&o), "PN-DISP-003").status, Status::Warning);
     }
 
     #[test]
     fn missing_window_fails_and_small_window_warns() {
         let mut o = obs(RunOutcome::Survived);
         o.windows.clear();
-        assert_eq!(get(&evaluate(&o), "SP-DISP-001").status, Status::Fail);
+        assert_eq!(get(&evaluate(&o), "PN-DISP-001").status, Status::Fail);
         // Regression: a crash before the first window check is not proof
         // that no window was opened.
         let mut early = obs(RunOutcome::Crashed);
         early.windows.clear();
         assert_eq!(
-            get(&evaluate(&early), "SP-DISP-001").status,
+            get(&evaluate(&early), "PN-DISP-001").status,
             Status::Unknown
         );
         let mut o = obs(RunOutcome::Survived);
@@ -649,14 +649,14 @@ mod tests {
             width: 400,
             height: 150,
         });
-        assert_eq!(get(&evaluate(&o), "SP-DISP-004").status, Status::Warning);
+        assert_eq!(get(&evaluate(&o), "PN-DISP-004").status, Status::Warning);
     }
 
     #[test]
     fn launch_failure_marks_dependent_checks_not_tested() {
         let r = evaluate(&obs(RunOutcome::LaunchFailed));
-        assert_eq!(get(&r, "SP-RUN-001").status, Status::Fail);
-        for id in ["SP-RUN-002", "SP-DISP-001", "SP-DISP-002"] {
+        assert_eq!(get(&r, "PN-RUN-001").status, Status::Fail);
+        for id in ["PN-RUN-002", "PN-DISP-001", "PN-DISP-002"] {
             assert_eq!(get(&r, id).status, Status::NotTested, "{id}");
         }
     }
@@ -676,6 +676,6 @@ mod tests {
                 stats: stats(true, true, Bars::default()),
             },
         ];
-        assert_eq!(get(&evaluate(&o), "SP-DISP-002").artifacts, vec!["a.png"]);
+        assert_eq!(get(&evaluate(&o), "PN-DISP-002").artifacts, vec!["a.png"]);
     }
 }

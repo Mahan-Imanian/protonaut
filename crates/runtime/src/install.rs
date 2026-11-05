@@ -110,16 +110,16 @@ impl Manifest {
     }
 }
 
-/// `$STEAMOS_PREFLIGHT_CACHE`, else `$XDG_CACHE_HOME/steamos-preflight`,
-/// else `~/.cache/steamos-preflight`.
+/// `$PROTONAUT_CACHE`, else `$XDG_CACHE_HOME/protonaut`,
+/// else `~/.cache/protonaut`.
 pub fn default_cache_dir() -> Option<PathBuf> {
-    if let Some(p) = std::env::var_os("STEAMOS_PREFLIGHT_CACHE").filter(|p| !p.is_empty()) {
+    if let Some(p) = std::env::var_os("PROTONAUT_CACHE").filter(|p| !p.is_empty()) {
         return Some(PathBuf::from(p));
     }
     if let Some(p) = std::env::var_os("XDG_CACHE_HOME").filter(|p| !p.is_empty()) {
-        return Some(PathBuf::from(p).join("steamos-preflight"));
+        return Some(PathBuf::from(p).join("protonaut"));
     }
-    std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".cache/steamos-preflight"))
+    std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".cache/protonaut"))
 }
 
 #[derive(Debug, Clone)]
@@ -176,7 +176,7 @@ impl Cache {
     /// marker last, so a half-extracted directory is never used.
     pub fn installed(&self, spec: &RuntimeSpec) -> Option<InstalledRuntime> {
         let dir = self.runtime_dir(spec);
-        let marker = fs::read_to_string(dir.join(".preflight-verified")).ok()?;
+        let marker = fs::read_to_string(dir.join(".protonaut-verified")).ok()?;
         let root = dir.join(&spec.archive_dir);
         (marker.trim() == spec.sha256 && root.join("proton").is_file()).then(|| InstalledRuntime {
             spec: spec.clone(),
@@ -270,7 +270,7 @@ impl Cache {
                 spec.id, spec.archive_dir
             )));
         }
-        fs::write(staging.join(".preflight-verified"), &spec.sha256)
+        fs::write(staging.join(".protonaut-verified"), &spec.sha256)
             .map_err(|e| RuntimeError::io(&staging, e))?;
         if final_dir.exists() {
             fs::remove_dir_all(&final_dir).map_err(|e| RuntimeError::io(&final_dir, e))?;
@@ -378,7 +378,7 @@ mod tests {
             dir.path()
                 .join("runtimes")
                 .join(&spec.id)
-                .join(".preflight-verified"),
+                .join(".protonaut-verified"),
             "0".repeat(64),
         )
         .unwrap();
@@ -390,7 +390,7 @@ mod tests {
             dir.path()
                 .join("runtimes")
                 .join(&spec.id)
-                .join(".preflight-verified"),
+                .join(".protonaut-verified"),
             &spec.sha256,
         )
         .unwrap();

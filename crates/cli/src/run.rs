@@ -3,17 +3,17 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use preflight_core::config::{Config, ConfigFile, DEFAULT_CONFIG_FILE, Overrides, STARTER_CONFIG};
-use preflight_core::inspect::{BuildTree, PeInfo};
-use preflight_core::model::{
+use protonaut_core::config::{Config, ConfigFile, DEFAULT_CONFIG_FILE, Overrides, STARTER_CONFIG};
+use protonaut_core::inspect::{BuildTree, PeInfo};
+use protonaut_core::model::{
     EnvironmentInfo, REPORT_SCHEMA_VERSION, Report, RunSummary, TargetInfo, Verdict,
 };
-use preflight_core::report::{ReportInput, assemble, render_html, render_junit, render_markdown};
-use preflight_core::runtime_checks;
-use preflight_core::static_checks::{StaticContext, StaticInput, run_static_checks};
-use preflight_runtime::display::{Display, SYSTEM_CONFIG_DIR, SYSTEM_CONFIG_NAME, xorg_config};
-use preflight_runtime::install::{Cache, InstalledRuntime, Manifest, default_cache_dir};
-use preflight_runtime::proton::{GameRequest, ProtonBackend, kill_prefixes};
+use protonaut_core::report::{ReportInput, assemble, render_html, render_junit, render_markdown};
+use protonaut_core::runtime_checks;
+use protonaut_core::static_checks::{StaticContext, StaticInput, run_static_checks};
+use protonaut_runtime::display::{Display, SYSTEM_CONFIG_DIR, SYSTEM_CONFIG_NAME, xorg_config};
+use protonaut_runtime::install::{Cache, InstalledRuntime, Manifest, default_cache_dir};
+use protonaut_runtime::proton::{GameRequest, ProtonBackend, kill_prefixes};
 
 use crate::{
     BuildArgs, Cli, Command, InspectArgs, ProtonCommand, ReportArgs, ReportFormat, TestArgs,
@@ -71,7 +71,7 @@ fn init(force: bool) -> Result<u8, CliError> {
     fs::write(path, STARTER_CONFIG)
         .map_err(|e| env_err(format!("cannot write {DEFAULT_CONFIG_FILE}: {e}")))?;
     println!(
-        "Wrote {DEFAULT_CONFIG_FILE}. Set build.dir and build.exe, then run `steamos-preflight test`."
+        "Wrote {DEFAULT_CONFIG_FILE}. Set build.dir and build.exe, then run `protonaut test`."
     );
     Ok(exit::PASS)
 }
@@ -80,7 +80,7 @@ fn cache_for(arg: &Option<PathBuf>) -> Result<Cache, CliError> {
     let dir = arg
         .clone()
         .or_else(default_cache_dir)
-        .ok_or_else(|| env_err("no cache directory: set --cache or STEAMOS_PREFLIGHT_CACHE"))?;
+        .ok_or_else(|| env_err("no cache directory: set --cache or PROTONAUT_CACHE"))?;
     Ok(Cache::new(dir))
 }
 
@@ -105,7 +105,7 @@ fn load_config(b: &BuildArgs, extra: Overrides) -> Result<Config, CliError> {
 }
 
 struct StaticOutcome {
-    checks: Vec<preflight_core::model::CheckResult>,
+    checks: Vec<protonaut_core::model::CheckResult>,
     exe_rel: String,
 }
 
@@ -205,7 +205,7 @@ async fn test(a: TestArgs) -> Result<u8, CliError> {
             None if a.install => cache.install(spec, None).await.map_err(env_err)?,
             None => {
                 return Err(env_err(format!(
-                    "runtime {} is not installed; run `steamos-preflight proton install {}` or pass --install",
+                    "runtime {} is not installed; run `protonaut proton install {}` or pass --install",
                     spec.id, spec.id
                 )));
             }
@@ -215,7 +215,7 @@ async fn test(a: TestArgs) -> Result<u8, CliError> {
     fs::create_dir_all(&a.build.results)
         .map_err(|e| env_err(format!("cannot create {}: {e}", a.build.results.display())))?;
     let work = tempfile::Builder::new()
-        .prefix("steamos-preflight-")
+        .prefix("protonaut-")
         .tempdir()
         .map_err(|e| env_err(format!("cannot create work directory: {e}")))?;
 
@@ -334,13 +334,13 @@ async fn run_all(
 fn redactions(build: &Path, work: &Path, results: &Path) -> Vec<(String, &'static str)> {
     let mut v = Vec::new();
     for (p, placeholder) in [(build, "<build>"), (work, "<work>"), (results, "<results>")] {
-        v.extend(preflight_core::report::path_variants(
+        v.extend(protonaut_core::report::path_variants(
             &p.display().to_string(),
             placeholder,
         ));
     }
     if let Some(home) = std::env::var_os("HOME") {
-        v.extend(preflight_core::report::path_variants(
+        v.extend(protonaut_core::report::path_variants(
             &home.to_string_lossy(),
             "~",
         ));
@@ -396,7 +396,7 @@ fn print_summary(report: &Report, results: &Path, json: bool) -> Result<(), CliE
     let n = &report.summary.counts;
     println!(
         "\n{}: {} pass, {} fail, {} warning, {} unknown, {} not tested. Report: {}",
-        preflight_core::report::headline(report),
+        protonaut_core::report::headline(report),
         n.pass,
         n.fail,
         n.warning,
@@ -513,8 +513,8 @@ fn setup(print: bool) -> Result<u8, CliError> {
 
 fn schema(write: bool) -> Result<u8, CliError> {
     let schemas = [
-        ("report.v1.schema.json", preflight_core::report_schema()),
-        ("config.v1.schema.json", preflight_core::config_schema()),
+        ("report.v1.schema.json", protonaut_core::report_schema()),
+        ("config.v1.schema.json", protonaut_core::config_schema()),
     ];
     for (name, value) in schemas {
         let text = serde_json::to_string_pretty(&value).map_err(env_err)? + "\n";

@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::time::Duration;
 
-use preflight_core::observe::{FrameStats, WindowSeen, frame_stats};
+use protonaut_core::observe::{FrameStats, WindowSeen, frame_stats};
 
 use crate::RuntimeError;
 use crate::supervise::run_tool;
@@ -229,7 +229,7 @@ mod tests {
         .await
         .unwrap();
         let text = read_text(&img, dir.path()).await.unwrap();
-        let hits = preflight_core::observe::error_snippets(&text);
+        let hits = protonaut_core::observe::error_snippets(&text);
         assert_eq!(hits.len(), 1, "OCR read {text:?}");
         assert!(
             !dir.path().join("ocr-input.png").exists(),

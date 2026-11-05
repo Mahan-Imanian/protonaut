@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::model::FailOn;
 
 pub const CONFIG_SCHEMA_VERSION: u32 = 1;
-pub const DEFAULT_CONFIG_FILE: &str = "preflight.toml";
+pub const DEFAULT_CONFIG_FILE: &str = "protonaut.toml";
 pub const MIN_OBSERVE_SECS: u64 = 3;
 pub const MAX_OBSERVE_SECS: u64 = 600;
 const MAX_ARGS: usize = 32;
@@ -21,7 +21,7 @@ pub enum ConfigError {
     #[error("invalid {path}: {message}")]
     Parse { path: String, message: String },
     #[error(
-        "unsupported schema_version {0}; this version of steamos-preflight reads version {CONFIG_SCHEMA_VERSION}"
+        "unsupported schema_version {0}; this version of protonaut reads version {CONFIG_SCHEMA_VERSION}"
     )]
     SchemaVersion(u32),
     #[error("{field}: {message}")]
@@ -142,7 +142,7 @@ impl Default for RunSection {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct ChecksSection {
-    /// Check ids to leave out of the report, for example `SP-MEDIA-001`.
+    /// Check ids to leave out of the report, for example `PN-MEDIA-001`.
     #[serde(default)]
     pub skip: Vec<String>,
 }
@@ -298,7 +298,7 @@ impl Config {
         if let Some(s) = self.skip.iter().find(|s| !is_check_id(s)) {
             return Err(invalid(
                 "checks.skip",
-                format!("{s:?} is not a check id like SP-PE-001"),
+                format!("{s:?} is not a check id like PN-PE-001"),
             ));
         }
         Ok(())
@@ -345,13 +345,13 @@ fn is_identifier(s: &str) -> bool {
 }
 
 fn is_check_id(s: &str) -> bool {
-    s.starts_with("SP-")
+    s.starts_with("PN-")
         && s.len() <= 32
         && s.bytes()
             .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit() || b == b'-')
 }
 
-pub const STARTER_CONFIG: &str = r#"# SteamOS Preflight configuration. Every key is optional except where noted;
+pub const STARTER_CONFIG: &str = r#"# Protonaut configuration. Every key is optional except where noted;
 # command-line flags override these values.
 schema_version = 1
 

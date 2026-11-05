@@ -31,7 +31,7 @@
           "$ref": "#/$defs/Evidence"
         },
         "id": {
-          "description": "Stable identifier, for example `SP-PE-002`. Never reused for a\ndifferent meaning.",
+          "description": "Stable identifier, for example `PN-PE-002`. Never reused for a\ndifferent meaning.",
           "type": "string"
         },
         "runtime": {
@@ -307,7 +307,7 @@
       "type": "string"
     }
   },
-  "$id": "https://github.com/Mahan-Imanian/steamos-preflight/blob/main/schemas/report.v1.schema.json",
+  "$id": "https://github.com/Mahan-Imanian/protonaut/blob/main/schemas/report.v1.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "properties": {
     "checks": {
@@ -362,6 +362,6 @@
     "summary",
     "limitations"
   ],
-  "title": "SteamOS Preflight report",
+  "title": "Protonaut report",
   "type": "object"
 }

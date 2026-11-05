@@ -1,6 +1,6 @@
 # Threat model
 
-SteamOS Preflight runs a game build, which is arbitrary Windows code, on a CI
+Protonaut runs a game build, which is arbitrary Windows code, on a CI
 machine that also holds credentials. This page states what is protected,
 how, what was verified, and what is **not** protected.
 
@@ -8,7 +8,7 @@ how, what was verified, and what is **not** protected.
 Linux user in its own network namespace on the same kernel as the CI job.
 The strongest boundary in the system is the one GitHub provides: each job on
 a GitHub-hosted runner gets a fresh virtual machine that is discarded
-afterwards. SteamOS Preflight's sandbox limits what a build can reach
+afterwards. Protonaut's sandbox limits what a build can reach
 *inside* that VM; it does not replace it.
 
 ## Scope and assumptions
@@ -31,7 +31,7 @@ afterwards. SteamOS Preflight's sandbox limits what a build can reach
 
 ## How the action runs a build
 
-1. Runtimes are installed **by root** into `/var/tmp/steamos-preflight/cache`,
+1. Runtimes are installed **by root** into `/var/tmp/protonaut/cache`,
    root-owned and read-only for everyone else.
 2. A fresh home, a copy of the build and an empty results directory are
    created for the system user `spf-sandbox` (no login shell, no sudo rights,

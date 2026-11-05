@@ -1,5 +1,5 @@
-name: SteamOS Preflight PR comment
-description: Post or update a pull-request comment from a SteamOS Preflight report.json. Run it in a job that does not execute the game build.
+name: Protonaut PR comment
+description: Post or update a pull-request comment from a Protonaut report.json. Run it in a job that does not execute the game build.
 
 inputs:
   report:
@@ -21,16 +21,16 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Build steamos-preflight
+    - name: Build protonaut
       shell: bash
       env:
         ACTION_DIR: ${{ github.action_path }}/..
       run: |
         set -euo pipefail
-        if ! command -v steamos-preflight >/dev/null; then
+        if ! command -v protonaut >/dev/null; then
           cd "$ACTION_DIR"
           cargo build --locked --release --quiet
-          sudo install -m 0755 target/release/steamos-preflight /usr/local/bin/steamos-preflight
+          sudo install -m 0755 target/release/protonaut /usr/local/bin/protonaut
         fi
 
     - name: Render and post
@@ -44,11 +44,11 @@ runs:
       run: |
         set -euo pipefail
         [[ "$PR" =~ ^[0-9]+$ ]] || { echo "::error::pr-number must be a number"; exit 2; }
-        body="$RUNNER_TEMP/steamos-preflight-comment.md"
+        body="$RUNNER_TEMP/protonaut-comment.md"
         # report.json comes from a job that ran untrusted code: the CLI
         # validates it against the schema and escapes every string.
-        steamos-preflight report "$REPORT" --format markdown --artifact-url "$ARTIFACT_URL" --out "$body"
-        marker='<!-- steamos-preflight-report -->'
+        protonaut report "$REPORT" --format markdown --artifact-url "$ARTIFACT_URL" --out "$body"
+        marker='<!-- protonaut-report -->'
         # The author is an input, not looked up: the default GITHUB_TOKEN
         # cannot call /user, and `gh api` prints the error body on stdout.
         [[ "$AUTHOR" =~ ^[A-Za-z0-9-]+(\[bot\])?$ ]] || { echo "::error::comment-author is not a GitHub login"; exit 2; }

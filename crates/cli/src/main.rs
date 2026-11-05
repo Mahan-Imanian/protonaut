@@ -5,8 +5,8 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
-use preflight_core::config::Resolution;
-use preflight_core::model::FailOn;
+use protonaut_core::config::Resolution;
+use protonaut_core::model::FailOn;
 
 /// Exit codes are part of the public interface (docs/reference/cli.md).
 pub mod exit {
@@ -18,7 +18,7 @@ pub mod exit {
 }
 
 #[derive(Parser, Debug)]
-#[command(name = "steamos-preflight", version, about = "Automated compatibility testing for Windows games targeting SteamOS.", long_about = None)]
+#[command(name = "protonaut", version, about = "Automated compatibility testing for Windows games targeting SteamOS.", long_about = None)]
 #[command(
     after_help = "Independent community project, not affiliated with Valve. Results cannot predict a Steam Deck Verified rating."
 )]
@@ -29,7 +29,7 @@ pub struct Cli {
     #[arg(short, long, action = clap::ArgAction::Count, global = true)]
     pub verbose: u8,
     /// Log format on stderr.
-    #[arg(long, value_enum, default_value_t = LogFormat::Text, global = true, env = "STEAMOS_PREFLIGHT_LOG_FORMAT")]
+    #[arg(long, value_enum, default_value_t = LogFormat::Text, global = true, env = "PROTONAUT_LOG_FORMAT")]
     pub log_format: LogFormat,
 }
 
@@ -41,7 +41,7 @@ pub enum LogFormat {
 
 #[derive(Subcommand, Debug)]
 pub enum Command {
-    /// Write a starter preflight.toml in the current directory.
+    /// Write a starter protonaut.toml in the current directory.
     Init {
         /// Overwrite an existing file.
         #[arg(long)]
@@ -70,7 +70,7 @@ pub enum Command {
         #[arg(long)]
         print: bool,
     },
-    /// Print or write the JSON Schemas for report.json and preflight.toml.
+    /// Print or write the JSON Schemas for report.json and protonaut.toml.
     Schema {
         /// Write schemas/*.json in the current directory.
         #[arg(long)]
@@ -85,17 +85,17 @@ pub struct BuildArgs {
     /// Executable relative to the build directory. Overrides build.exe.
     #[arg(long)]
     pub exe: Option<String>,
-    /// Configuration file. Default: ./preflight.toml when it exists.
-    #[arg(long, env = "STEAMOS_PREFLIGHT_CONFIG")]
+    /// Configuration file. Default: ./protonaut.toml when it exists.
+    #[arg(long, env = "PROTONAUT_CONFIG")]
     pub config: Option<PathBuf>,
     /// Where to write report.json and artifacts.
-    #[arg(long, default_value = "preflight-results")]
+    #[arg(long, default_value = "protonaut-results")]
     pub results: PathBuf,
     /// Print the report as JSON on stdout instead of a text summary.
     #[arg(long)]
     pub json: bool,
-    /// Directory for downloaded runtimes. Default: $STEAMOS_PREFLIGHT_CACHE,
-    /// $XDG_CACHE_HOME/steamos-preflight or ~/.cache/steamos-preflight.
+    /// Directory for downloaded runtimes. Default: $PROTONAUT_CACHE,
+    /// $XDG_CACHE_HOME/protonaut or ~/.cache/protonaut.
     #[arg(long)]
     pub cache: Option<PathBuf>,
 }
@@ -207,7 +207,7 @@ fn init_logging(cli: &Cli) {
         _ => "trace",
     };
     let filter =
-        EnvFilter::try_from_env("STEAMOS_PREFLIGHT_LOG").unwrap_or_else(|_| EnvFilter::new(level));
+        EnvFilter::try_from_env("PROTONAUT_LOG").unwrap_or_else(|_| EnvFilter::new(level));
     let builder = tracing_subscriber::fmt()
         .with_env_filter(filter)
         .with_writer(std::io::stderr)

@@ -1,6 +1,6 @@
 [package]
-name = "preflight-core"
-description = "Configuration, result model, static PE checks and reports for SteamOS Preflight."
+name = "protonaut-core"
+description = "Configuration, result model, static PE checks and reports for Protonaut."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

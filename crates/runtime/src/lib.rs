@@ -1,9 +1,9 @@
-//! SteamOS Preflight runtime layer: installs pinned Proton builds, runs a
+//! Protonaut runtime layer: installs pinned Proton builds, runs a
 //! headless Xorg display and supervises the build under test.
 //!
 //! Only `ProtonBackend` exists today. A future backend (plain Wine, a real
 //! Steam Deck over SSH) produces the same `RunObservation`, so the rules in
-//! `preflight_core::runtime_checks` and the reports stay unchanged.
+//! `protonaut_core::runtime_checks` and the reports stay unchanged.
 
 pub mod capture;
 pub mod display;
