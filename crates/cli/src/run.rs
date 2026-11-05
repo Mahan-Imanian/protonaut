@@ -392,19 +392,26 @@ fn print_summary(report: &Report, results: &Path, json: bool) -> Result<(), CliE
         return Ok(());
     }
     let color = std::io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none();
-    for c in &report.checks {
+    let mut checks: Vec<_> = report.checks.iter().collect();
+    checks.sort_by_key(|c| severity(c.status.as_str()));
+    for c in checks {
         let rt = c
             .runtime
             .as_deref()
             .map(|r| format!(" [{r}]"))
             .unwrap_or_default();
+        let detail = if severity(c.status.as_str()) >= severity("WARNING") {
+            format!(": {}", c.summary)
+        } else {
+            String::new()
+        };
         println!(
-            "{} {:<14} {}{} — {}",
+            "{} {:<14} {}{}{}",
             status_label(c.status.as_str(), color),
             c.id,
             c.title,
             rt,
-            c.summary
+            detail
         );
     }
     let n = &report.summary.counts;
@@ -421,6 +428,15 @@ fn print_summary(report: &Report, results: &Path, json: bool) -> Result<(), CliE
         results.join("report.html").display()
     );
     Ok(())
+}
+
+fn severity(status: &str) -> u8 {
+    match status {
+        "PASS" => 0,
+        "WARNING" => 2,
+        "FAIL" => 3,
+        _ => 1,
+    }
 }
 
 fn step(message: &str) {
@@ -585,6 +601,16 @@ mod output_tests {
         assert_eq!(status_label("FAIL", false), "FAIL      ");
         assert_eq!(verdict_label(Verdict::Fail, false), "NO-GO.");
         assert_eq!(verdict_label(Verdict::Pass, false), "GO.");
+    }
+
+    #[test]
+    fn failures_sort_last_so_they_sit_above_the_verdict() {
+        let mut statuses = ["FAIL", "PASS", "WARNING", "NOT_TESTED", "UNKNOWN"];
+        statuses.sort_by_key(|s| severity(s));
+        assert_eq!(
+            statuses,
+            ["PASS", "NOT_TESTED", "UNKNOWN", "WARNING", "FAIL"]
+        );
     }
 
     #[test]
