@@ -1,25 +1,23 @@
 <div class="c">
 <div class="grid"></div>
-<div class="l">
-<div class="brand"><div class="p">
-{{LOGO}}
-</div><span>PROTONAUT</span></div>
+<div class="t">
+<div class="brand"><i></i>PROTONAUT</div>
 <h1>TEST WINDOWS GAMES<br>ON PROTON IN CI</h1>
-<p>Runs your build under GE-Proton on every pull request. Crashes and black screens turn the PR red.</p>
-<div class="tags"><b>GITHUB ACTION</b><b>OPEN SOURCE</b><b>RUST</b></div>
+<p>Catch crashes and black screens on every pull request, without a Steam Deck.</p>
 </div>
-<img class="shot" src="../../pr-comment.png" alt="">
+<div class="wrap">
+{{PANEL}}
+</div>
 </div>
 <style>
-.c{position:relative;width:2000px;height:620px;background:#0D1524;overflow:hidden;color:#F3ECDD}
-.grid{position:absolute;inset:0;background-image:linear-gradient(#1b2740 1px,transparent 1px),linear-gradient(90deg,#1b2740 1px,transparent 1px);background-size:40px 40px;opacity:.5}
-.l{position:absolute;left:96px;top:66px;width:800px}
-.brand{display:flex;align-items:center;gap:22px;margin-bottom:34px}
-.p svg{width:104px;height:104px;display:block}
-.brand span{font:800 76px/1 "Saira Condensed";letter-spacing:.09em}
-h1{font:800 66px/1.1 "Saira Condensed";letter-spacing:.015em;margin:0 0 22px}
-p{font:400 25px/1.45 "IBM Plex Mono";color:#C9D2E0;margin:0 0 28px;width:780px}
-.tags{display:flex;gap:12px}
-.tags b{font:600 25px/1 "Saira Condensed";letter-spacing:.1em;border:1px solid #33435F;background:#131D30;padding:10px 14px}
-.shot{position:absolute;left:960px;top:56px;width:1000px;border:1px solid #33435F;border-bottom:0}
+.c{position:relative;width:2000px;height:620px;background:#0B0E13;overflow:hidden;color:#ECE8E1}
+.grid{position:absolute;inset:0;background-image:linear-gradient(#171C24 1px,transparent 1px),linear-gradient(90deg,#171C24 1px,transparent 1px);background-size:40px 40px}
+.t{position:absolute;left:96px;top:92px;width:860px}
+.brand{display:flex;align-items:center;gap:18px;font:800 54px/1 "Saira Condensed";letter-spacing:.16em;margin-bottom:56px}
+.brand i{position:relative;display:block;width:52px;height:52px;background:#FF4F00;clip-path:polygon(13px 0,100% 0,100% 100%,0 100%,0 13px)}
+.brand i:before,.brand i:after{content:"";position:absolute;background:#0B0E13}
+.brand i:before{left:23px;top:12px;width:6px;height:28px}.brand i:after{left:12px;top:23px;width:28px;height:6px}
+h1{font:800 92px/1 "Saira Condensed";letter-spacing:.005em;margin:0 0 24px}
+p{font:400 26px/1.42 "IBM Plex Mono";color:#AEB6C1;margin:0;width:800px}
+.wrap{position:absolute;left:1020px;top:73px}
 </style>

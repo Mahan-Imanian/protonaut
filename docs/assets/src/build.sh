@@ -11,10 +11,9 @@ html,body{margin:0;background:transparent}
 </style>'
 out=$(mktemp -d -p .)
 trap 'rm -rf "$out"' EXIT
-page() { { echo '<!doctype html><meta charset="utf-8">'; echo "$F"; sed -e "/{{LOGO}}/{r ../logo.svg" -e "d}" "$1"; } | sed 's/\.\.\/fonts/..\/..\/fonts/' > "$2"; }
-page patch.tpl "$out/p.html"; ./render.sh "$out/p.html" ../patch.png 1024 1024
+page() { { echo '<!doctype html><meta charset="utf-8">'; echo "$F"; sed -e "/{{PANEL}}/{r panel.html" -e "d}" "$1"; } | sed 's/\.\.\/fonts/..\/..\/fonts/' > "$2"; }
 page wordmark-dark.tpl "$out/d.html"; ./render.sh "$out/d.html" ../wordmark-dark.png 1040 220
 page wordmark-light.tpl "$out/l.html"; ./render.sh "$out/l.html" ../wordmark-light.png 1040 220
 page social.tpl "$out/s.html"; ./render.sh "$out/s.html" ../social-preview.png 1280 640
 page card.tpl "$out/c.html"; ./render.sh "$out/c.html" ../profile-card.png 2000 620
-ffmpeg -y -loglevel error -i ../patch.png -vf scale=64:64 ../favicon.png
+page mark.tpl "$out/m.html"; ./render.sh "$out/m.html" "$out/m.png" 256 256; ffmpeg -y -loglevel error -i "$out/m.png" -vf scale=64:64 ../favicon.png
