@@ -5,7 +5,7 @@
 </div>
 <div class="r">
 <h1>PROTONAUT</h1>
-<p class="t">Go / no-go for your Windows game build on Proton, on every pull request.</p>
+<p class="t">Test your Windows game build on Proton, on every pull request.</p>
 <pre><b class="g">PASS</b> PN-RUN-001  Game process starts under Proton
 <b class="g">PASS</b> PN-DISP-002 Game renders visible content
 <b class="n">FAIL</b> PN-RUN-002  Crashed after 4.1 s</pre>

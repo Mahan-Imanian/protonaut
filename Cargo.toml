@@ -3,10 +3,10 @@ resolver = "3"
 members = ["crates/core", "crates/runtime", "crates/cli"]
 
 [workspace.package]
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 rust-version = "1.88"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 authors = ["Protonaut contributors"]
 keywords = ["steamos", "proton", "steam-deck", "ci", "gamedev"]
 categories = ["development-tools::testing", "command-line-utilities"]

@@ -5,14 +5,14 @@
   <img alt="Protonaut" src="docs/assets/wordmark-light.png" width="480">
 </picture>
 
-**Go / no-go for your Windows game build on Proton, on every pull request.**
+**Test your Windows game build on Proton, on every pull request.**
 
 Protonaut runs your build under pinned GE-Proton on a headless Linux display in CI. When a change makes it crash, render black or open the wrong window, the PR goes red with screenshots and logs. You don't need a Steam Deck.
 
 [![CI](https://github.com/Mahan-Imanian/protonaut/actions/workflows/ci.yml/badge.svg)](https://github.com/Mahan-Imanian/protonaut/actions/workflows/ci.yml)
 [![Real games](https://github.com/Mahan-Imanian/protonaut/actions/workflows/real-games.yml/badge.svg)](https://github.com/Mahan-Imanian/protonaut/actions/workflows/real-games.yml)
 [![Latest release](https://img.shields.io/github/v/release/Mahan-Imanian/protonaut?color=FF4F00&label=release)](https://github.com/Mahan-Imanian/protonaut/releases/latest)
-[![License: MIT or Apache-2.0](https://img.shields.io/badge/license-MIT%20or%20Apache--2.0-0D1524)](#license)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0D1524)](LICENSE)
 
 [**Website**](https://mahan-imanian.github.io/protonaut/) ·
 [Quick start](#quick-start) ·
@@ -20,7 +20,7 @@ Protonaut runs your build under pinned GE-Proton on a headless Linux display in 
 [All checks](docs/reference/checks.md) ·
 [Changelog](CHANGELOG.md)
 
-<img src="docs/assets/demo.gif" alt="A terminal running protonaut test on a build that crashes under Proton. The run ends in a NO-GO verdict with two failures." width="860">
+<img src="docs/assets/demo.gif" alt="A terminal running protonaut test on a build that crashes under Proton. The run ends with two failures." width="860">
 
 </div>
 
@@ -136,7 +136,7 @@ Version 0.2 is **experimental**. The CLI, report schema and action inputs may ch
 
 ## License
 
-Licensed under either of the [Apache License, Version 2.0](LICENSE-APACHE) or the [MIT license](LICENSE-MIT), at your option. Unless you state otherwise, any contribution you submit for inclusion is dual licensed the same way, without additional terms.
+Licensed under the [Apache License, Version 2.0](LICENSE). If you redistribute Protonaut or a modified version, you must keep the copyright notices and the [NOTICE](NOTICE) file and mark the files you changed. The license grants no rights to the Protonaut name or logo. Contributions are licensed the same way unless you state otherwise.
 
 GE-Proton, Wine, DXVK and Mesa are separate projects under their own licenses. Protonaut downloads them at test time and does not redistribute them.
 

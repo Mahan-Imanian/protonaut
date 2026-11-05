@@ -111,7 +111,7 @@ A complete workflow is in [examples/github-actions.yml](../examples/github-actio
 
 ## Pinning
 
-`@v0` follows the latest 0.x release, and `@v0.2.0` pins one version. Both install the
+`@v0` follows the latest 0.x release, and `@v0.2.1` pins one version. Both install the
 release binary. Before running it, the action checks it against the release's
 `SHA256SUMS` and verifies its GitHub build provenance attestation: it must have
 been built by this repository's `release.yml` workflow from the matching
