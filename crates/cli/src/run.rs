@@ -1,5 +1,6 @@
 use std::collections::BTreeSet;
 use std::fs;
+use std::io::IsTerminal;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -260,6 +261,8 @@ async fn run_all(
 ) -> Result<Report, CliError> {
     let st = static_pass(cfg, runtimes.first())?;
     let mut checks = st.checks;
+    step(&format!("Static checks done: {} results", checks.len()));
+    step("Starting headless display");
     let display = Display::start(cfg.resolution, work)
         .await
         .map_err(env_err)?;
@@ -288,8 +291,18 @@ async fn run_all(
             work,
             redactions: &redactions,
         };
+        step(&format!(
+            "Running {} under {}, watching for up to {} s",
+            st.exe_rel, rt.spec.id, cfg.observe_secs
+        ));
         match backend.run(&req).await {
             Ok(out) => {
+                step(&format!(
+                    "{}: {:?} after {:.1} s",
+                    rt.spec.id,
+                    out.observation.outcome,
+                    out.observation.duration_ms as f64 / 1000.0
+                ));
                 if env.vulkan_device.is_none() {
                     env.vulkan_device = out.vulkan_device.clone();
                 }
@@ -378,6 +391,7 @@ fn print_summary(report: &Report, results: &Path, json: bool) -> Result<(), CliE
         println!("{}", serde_json::to_string_pretty(report).map_err(env_err)?);
         return Ok(());
     }
+    let color = std::io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none();
     for c in &report.checks {
         let rt = c
             .runtime
@@ -385,8 +399,8 @@ fn print_summary(report: &Report, results: &Path, json: bool) -> Result<(), CliE
             .map(|r| format!(" [{r}]"))
             .unwrap_or_default();
         println!(
-            "{:<10} {:<14} {}{} — {}",
-            c.status.as_str(),
+            "{} {:<14} {}{} — {}",
+            status_label(c.status.as_str(), color),
             c.id,
             c.title,
             rt,
@@ -395,7 +409,9 @@ fn print_summary(report: &Report, results: &Path, json: bool) -> Result<(), CliE
     }
     let n = &report.summary.counts;
     println!(
-        "\n{}: {} pass, {} fail, {} warning, {} unknown, {} not tested. Report: {}",
+        "
+{} {}: {} pass, {} fail, {} warning, {} unknown, {} not tested. Report: {}",
+        verdict_label(report.summary.verdict, color),
         protonaut_core::report::headline(report),
         n.pass,
         n.fail,
@@ -405,6 +421,35 @@ fn print_summary(report: &Report, results: &Path, json: bool) -> Result<(), CliE
         results.join("report.html").display()
     );
     Ok(())
+}
+
+fn step(message: &str) {
+    eprintln!("> {message}");
+}
+
+fn paint(text: &str, code: &str, color: bool) -> String {
+    if color {
+        format!("[{code}m{text}[0m")
+    } else {
+        text.to_owned()
+    }
+}
+
+fn status_label(status: &str, color: bool) -> String {
+    let code = match status {
+        "PASS" => "32",
+        "FAIL" => "1;31",
+        "WARNING" => "33",
+        _ => "2",
+    };
+    paint(&format!("{status:<10}"), code, color)
+}
+
+fn verdict_label(verdict: Verdict, color: bool) -> String {
+    match verdict {
+        Verdict::Pass => paint("GO.", "1;32", color),
+        Verdict::Fail => paint("NO-GO.", "1;31", color),
+    }
 }
 
 fn verdict_code(report: &Report) -> u8 {
@@ -529,4 +574,21 @@ fn schema(write: bool) -> Result<u8, CliError> {
         }
     }
     Ok(exit::PASS)
+}
+
+#[cfg(test)]
+mod output_tests {
+    use super::*;
+
+    #[test]
+    fn labels_are_plain_without_color() {
+        assert_eq!(status_label("FAIL", false), "FAIL      ");
+        assert_eq!(verdict_label(Verdict::Fail, false), "NO-GO.");
+        assert_eq!(verdict_label(Verdict::Pass, false), "GO.");
+    }
+
+    #[test]
+    fn color_keeps_column_padding() {
+        assert_eq!(status_label("PASS", true), "[32mPASS      [0m");
+    }
 }
