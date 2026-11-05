@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Rebuilds every brand PNG from logo.svg and the HTML templates here.
 set -euo pipefail
 cd "$(dirname "$0")"
 F='<style>
