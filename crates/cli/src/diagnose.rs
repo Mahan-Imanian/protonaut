@@ -1,3 +1,7 @@
+//! `protonaut diagnose`: checks the packages, display config, free disk space
+//! and installed runtimes a test run needs, and prints the command that
+//! fixes each missing piece.
+
 use std::path::Path;
 
 use protonaut_runtime::display::{SYSTEM_CONFIG_DIR, SYSTEM_CONFIG_NAME};

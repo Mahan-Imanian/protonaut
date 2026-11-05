@@ -1,3 +1,7 @@
+//! What each subcommand does. `test` runs the static checks, then each
+//! configured runtime, writes the results folder and turns the verdict into
+//! an exit code. Host paths are redacted before anything is written.
+
 use std::collections::BTreeSet;
 use std::fs;
 use std::io::IsTerminal;
