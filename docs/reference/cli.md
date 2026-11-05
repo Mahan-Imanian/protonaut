@@ -1,14 +1,14 @@
 # Command line
 
 ```text
-steamos-preflight [-v...] [--log-format text|json] <command>
+protonaut [-v...] [--log-format text|json] <command>
 ```
 
 Logs go to stderr; command output (summaries, `--json`) goes to stdout.
 
 | Command | What it does |
 |---|---|
-| `init [--force]` | Writes a starter `preflight.toml` |
+| `init [--force]` | Writes a starter `protonaut.toml` |
 | `inspect [BUILD] --exe EXE` | Static checks only; never runs the build |
 | `test [BUILD] --exe EXE` | Static and runtime checks under each runtime |
 | `proton list` / `proton install ID [--archive FILE]` | Pinned runtimes: list, download and verify |
@@ -23,8 +23,8 @@ Options shared by `inspect` and `test`:
 |---|---|---|
 | `BUILD` | `build.dir` | Directory with the packaged Windows build |
 | `--exe` | `build.exe` | Executable relative to `BUILD` (matched case-insensitively) |
-| `--config` | `./preflight.toml` if present | Configuration file |
-| `--results` | `preflight-results` | Output directory |
+| `--config` | `./protonaut.toml` if present | Configuration file |
+| `--results` | `protonaut-results` | Output directory |
 | `--json` | off | Print `report.json` on stdout |
 | `--cache` | see below | Runtime cache directory |
 
@@ -47,15 +47,15 @@ runtimes), `--timeout SECS` (whole command, default 1800) and
 
 | Variable | Meaning |
 |---|---|
-| `STEAMOS_PREFLIGHT_CACHE` | Runtime cache. Otherwise `$XDG_CACHE_HOME/steamos-preflight`, then `~/.cache/steamos-preflight` |
-| `STEAMOS_PREFLIGHT_CONFIG` | Default for `--config` |
-| `STEAMOS_PREFLIGHT_LOG` | `tracing` filter, for example `debug` |
-| `STEAMOS_PREFLIGHT_LOG_FORMAT` | `text` or `json` |
+| `PROTONAUT_CACHE` | Runtime cache. Otherwise `$XDG_CACHE_HOME/protonaut`, then `~/.cache/protonaut` |
+| `PROTONAUT_CONFIG` | Default for `--config` |
+| `PROTONAUT_LOG` | `tracing` filter, for example `debug` |
+| `PROTONAUT_LOG_FORMAT` | `text` or `json` |
 
 ## Output files
 
 ```text
-preflight-results/
+protonaut-results/
 ├── report.json          schema v1, see report-format.md
 ├── report.md            Markdown summary (the PR comment body)
 ├── report.html          self-contained page with screenshots
@@ -71,8 +71,8 @@ Host paths, the home directory, the user and host names are replaced with
 
 ## Configuration
 
-See [`preflight.toml`](../../schemas/config.v1.schema.json) for the schema;
-`steamos-preflight init` writes a commented example. Unknown keys are an
+See [`protonaut.toml`](../../schemas/config.v1.schema.json) for the schema;
+`protonaut init` writes a commented example. Unknown keys are an
 error, so a typo cannot be silently ignored.
 
 ## Stability

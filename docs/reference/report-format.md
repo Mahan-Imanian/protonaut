@@ -8,7 +8,7 @@ committed schema and the code disagree).
 ```json
 {
   "schema_version": 1,
-  "tool": { "name": "steamos-preflight", "version": "0.1.0" },
+  "tool": { "name": "protonaut", "version": "0.1.0" },
   "generated_at": "2026-11-04T18:40:12Z",
   "target": { "exe": "Game.exe", "args": [] },
   "environment": { "os": "Ubuntu 24.04.5 LTS", "vulkan_device": "llvmpipe (LLVM 20.1.2, 256 bits)", "display": "Xorg dummy 1280x800_60.00 59.81*+" },
@@ -17,7 +17,7 @@ committed schema and the code disagree).
   ],
   "checks": [
     {
-      "id": "SP-RUN-002", "title": "Game keeps running during the observation window",
+      "id": "PN-RUN-002", "title": "Game keeps running during the observation window",
       "category": "runtime", "status": "FAIL", "evidence": "observed", "runtime": "ge-proton11-12",
       "summary": "Crashed after 4.1 s.",
       "details": ["wine: Unhandled division by zero at address 00006FFFFD7B18C0 (thread 014c), starting debugger..."],
@@ -43,7 +43,7 @@ committed schema and the code disagree).
 - Adding a field or a check id keeps `schema_version` at 1. Consumers must
   ignore fields and ids they do not know.
 - Removing or renaming a field, or changing a field's meaning, bumps
-  `schema_version`. `steamos-preflight report` refuses versions it does not
+  `schema_version`. `protonaut report` refuses versions it does not
   know.
 - Check ids follow the rules in [checks.md](checks.md).
 

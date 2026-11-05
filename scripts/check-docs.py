@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Checks that every relative link and image in the Markdown docs points at
-a file or directory that exists, and that every `steamos-preflight <command>`
+a file or directory that exists, and that every `protonaut <command>`
 mentioned in a shell block is a real subcommand. Standard library only."""
 import pathlib
 import re
@@ -29,9 +29,9 @@ def main() -> int:
                 errors.append(f"{doc.relative_to(ROOT)}: broken link {target}")
         for block in re.findall(r"```(?:bash|sh|console)\n(.*?)```", text, re.S):
             for line in block.splitlines():
-                m = re.match(r"\s*(?:sudo\s+)?steamos-preflight\s+(\S+)", line)
+                m = re.match(r"\s*(?:sudo\s+)?protonaut\s+(\S+)", line)
                 if m and m.group(1) not in COMMANDS:
-                    errors.append(f"{doc.relative_to(ROOT)}: unknown command `steamos-preflight {m.group(1)}`")
+                    errors.append(f"{doc.relative_to(ROOT)}: unknown command `protonaut {m.group(1)}`")
     if errors:
         print("\n".join(errors))
         return 1

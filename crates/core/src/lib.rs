@@ -1,4 +1,4 @@
-//! SteamOS Preflight core: configuration, the versioned report model, static
+//! Protonaut core: configuration, the versioned report model, static
 //! build inspection and report rendering. This crate performs no process
 //! execution and no network access.
 
@@ -15,16 +15,16 @@ pub fn report_schema() -> serde_json::Value {
     schema_value(
         schemars::schema_for!(model::Report),
         "report.v1.schema.json",
-        "SteamOS Preflight report",
+        "Protonaut report",
     )
 }
 
-/// JSON Schema for `preflight.toml` (expressed over its TOML data model).
+/// JSON Schema for `protonaut.toml` (expressed over its TOML data model).
 pub fn config_schema() -> serde_json::Value {
     schema_value(
         schemars::schema_for!(config::ConfigFile),
         "config.v1.schema.json",
-        "SteamOS Preflight configuration",
+        "Protonaut configuration",
     )
 }
 
@@ -33,8 +33,7 @@ fn schema_value(schema: schemars::Schema, file: &str, title: &str) -> serde_json
     if let Some(obj) = v.as_object_mut() {
         obj.insert(
             "$id".into(),
-            format!("https://github.com/Mahan-Imanian/steamos-preflight/blob/main/schemas/{file}")
-                .into(),
+            format!("https://github.com/Mahan-Imanian/protonaut/blob/main/schemas/{file}").into(),
         );
         obj.insert("title".into(), title.into());
     }
@@ -52,7 +51,7 @@ mod tests {
             .join(name);
         let text = std::fs::read_to_string(&path).unwrap_or_else(|_| {
             panic!(
-                "missing {}; run `cargo run -p steamos-preflight -- schema --write`",
+                "missing {}; run `cargo run -p protonaut -- schema --write`",
                 path.display()
             )
         });
@@ -64,7 +63,7 @@ mod tests {
         assert_eq!(
             committed("report.v1.schema.json"),
             super::report_schema(),
-            "run `cargo run -p steamos-preflight -- schema --write`"
+            "run `cargo run -p protonaut -- schema --write`"
         );
     }
 
@@ -73,7 +72,7 @@ mod tests {
         assert_eq!(
             committed("config.v1.schema.json"),
             super::config_schema(),
-            "run `cargo run -p steamos-preflight -- schema --write`"
+            "run `cargo run -p protonaut -- schema --write`"
         );
     }
 }

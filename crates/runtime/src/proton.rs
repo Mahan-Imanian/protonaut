@@ -3,11 +3,11 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
-use preflight_core::model::RunOutcome;
-use preflight_core::observe::{
+use protonaut_core::model::RunOutcome;
+use protonaut_core::observe::{
     LogFindings, RunObservation, ScreenText, Screenshot, WindowSeen, analyse_log, representative,
 };
-use preflight_core::report::redact;
+use protonaut_core::report::redact;
 use tokio::process::Command;
 
 use crate::RuntimeError;

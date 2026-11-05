@@ -1,19 +1,20 @@
 use std::collections::BTreeSet;
 use std::fs;
+use std::io::IsTerminal;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use preflight_core::config::{Config, ConfigFile, DEFAULT_CONFIG_FILE, Overrides, STARTER_CONFIG};
-use preflight_core::inspect::{BuildTree, PeInfo};
-use preflight_core::model::{
+use protonaut_core::config::{Config, ConfigFile, DEFAULT_CONFIG_FILE, Overrides, STARTER_CONFIG};
+use protonaut_core::inspect::{BuildTree, PeInfo};
+use protonaut_core::model::{
     EnvironmentInfo, REPORT_SCHEMA_VERSION, Report, RunSummary, TargetInfo, Verdict,
 };
-use preflight_core::report::{ReportInput, assemble, render_html, render_junit, render_markdown};
-use preflight_core::runtime_checks;
-use preflight_core::static_checks::{StaticContext, StaticInput, run_static_checks};
-use preflight_runtime::display::{Display, SYSTEM_CONFIG_DIR, SYSTEM_CONFIG_NAME, xorg_config};
-use preflight_runtime::install::{Cache, InstalledRuntime, Manifest, default_cache_dir};
-use preflight_runtime::proton::{GameRequest, ProtonBackend, kill_prefixes};
+use protonaut_core::report::{ReportInput, assemble, render_html, render_junit, render_markdown};
+use protonaut_core::runtime_checks;
+use protonaut_core::static_checks::{StaticContext, StaticInput, run_static_checks};
+use protonaut_runtime::display::{Display, SYSTEM_CONFIG_DIR, SYSTEM_CONFIG_NAME, xorg_config};
+use protonaut_runtime::install::{Cache, InstalledRuntime, Manifest, default_cache_dir};
+use protonaut_runtime::proton::{GameRequest, ProtonBackend, kill_prefixes};
 
 use crate::{
     BuildArgs, Cli, Command, InspectArgs, ProtonCommand, ReportArgs, ReportFormat, TestArgs,
@@ -71,7 +72,7 @@ fn init(force: bool) -> Result<u8, CliError> {
     fs::write(path, STARTER_CONFIG)
         .map_err(|e| env_err(format!("cannot write {DEFAULT_CONFIG_FILE}: {e}")))?;
     println!(
-        "Wrote {DEFAULT_CONFIG_FILE}. Set build.dir and build.exe, then run `steamos-preflight test`."
+        "Wrote {DEFAULT_CONFIG_FILE}. Set build.dir and build.exe, then run `protonaut test`."
     );
     Ok(exit::PASS)
 }
@@ -80,7 +81,7 @@ fn cache_for(arg: &Option<PathBuf>) -> Result<Cache, CliError> {
     let dir = arg
         .clone()
         .or_else(default_cache_dir)
-        .ok_or_else(|| env_err("no cache directory: set --cache or STEAMOS_PREFLIGHT_CACHE"))?;
+        .ok_or_else(|| env_err("no cache directory: set --cache or PROTONAUT_CACHE"))?;
     Ok(Cache::new(dir))
 }
 
@@ -105,7 +106,7 @@ fn load_config(b: &BuildArgs, extra: Overrides) -> Result<Config, CliError> {
 }
 
 struct StaticOutcome {
-    checks: Vec<preflight_core::model::CheckResult>,
+    checks: Vec<protonaut_core::model::CheckResult>,
     exe_rel: String,
 }
 
@@ -205,7 +206,7 @@ async fn test(a: TestArgs) -> Result<u8, CliError> {
             None if a.install => cache.install(spec, None).await.map_err(env_err)?,
             None => {
                 return Err(env_err(format!(
-                    "runtime {} is not installed; run `steamos-preflight proton install {}` or pass --install",
+                    "runtime {} is not installed; run `protonaut proton install {}` or pass --install",
                     spec.id, spec.id
                 )));
             }
@@ -215,7 +216,7 @@ async fn test(a: TestArgs) -> Result<u8, CliError> {
     fs::create_dir_all(&a.build.results)
         .map_err(|e| env_err(format!("cannot create {}: {e}", a.build.results.display())))?;
     let work = tempfile::Builder::new()
-        .prefix("steamos-preflight-")
+        .prefix("protonaut-")
         .tempdir()
         .map_err(|e| env_err(format!("cannot create work directory: {e}")))?;
 
@@ -260,6 +261,8 @@ async fn run_all(
 ) -> Result<Report, CliError> {
     let st = static_pass(cfg, runtimes.first())?;
     let mut checks = st.checks;
+    step(&format!("Static checks done: {} results", checks.len()));
+    step("Starting headless display");
     let display = Display::start(cfg.resolution, work)
         .await
         .map_err(env_err)?;
@@ -288,8 +291,18 @@ async fn run_all(
             work,
             redactions: &redactions,
         };
+        step(&format!(
+            "Running {} under {}, watching for up to {} s",
+            st.exe_rel, rt.spec.id, cfg.observe_secs
+        ));
         match backend.run(&req).await {
             Ok(out) => {
+                step(&format!(
+                    "{}: {:?} after {:.1} s",
+                    rt.spec.id,
+                    out.observation.outcome,
+                    out.observation.duration_ms as f64 / 1000.0
+                ));
                 if env.vulkan_device.is_none() {
                     env.vulkan_device = out.vulkan_device.clone();
                 }
@@ -334,13 +347,13 @@ async fn run_all(
 fn redactions(build: &Path, work: &Path, results: &Path) -> Vec<(String, &'static str)> {
     let mut v = Vec::new();
     for (p, placeholder) in [(build, "<build>"), (work, "<work>"), (results, "<results>")] {
-        v.extend(preflight_core::report::path_variants(
+        v.extend(protonaut_core::report::path_variants(
             &p.display().to_string(),
             placeholder,
         ));
     }
     if let Some(home) = std::env::var_os("HOME") {
-        v.extend(preflight_core::report::path_variants(
+        v.extend(protonaut_core::report::path_variants(
             &home.to_string_lossy(),
             "~",
         ));
@@ -378,25 +391,35 @@ fn print_summary(report: &Report, results: &Path, json: bool) -> Result<(), CliE
         println!("{}", serde_json::to_string_pretty(report).map_err(env_err)?);
         return Ok(());
     }
-    for c in &report.checks {
+    let color = std::io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none();
+    let mut checks: Vec<_> = report.checks.iter().collect();
+    checks.sort_by_key(|c| severity(c.status.as_str()));
+    for c in checks {
         let rt = c
             .runtime
             .as_deref()
             .map(|r| format!(" [{r}]"))
             .unwrap_or_default();
+        let detail = if severity(c.status.as_str()) >= severity("WARNING") {
+            format!(": {}", c.summary)
+        } else {
+            String::new()
+        };
         println!(
-            "{:<10} {:<14} {}{} — {}",
-            c.status.as_str(),
+            "{} {:<14} {}{}{}",
+            status_label(c.status.as_str(), color),
             c.id,
             c.title,
             rt,
-            c.summary
+            detail
         );
     }
     let n = &report.summary.counts;
     println!(
-        "\n{}: {} pass, {} fail, {} warning, {} unknown, {} not tested. Report: {}",
-        preflight_core::report::headline(report),
+        "
+{} {}: {} pass, {} fail, {} warning, {} unknown, {} not tested. Report: {}",
+        verdict_label(report.summary.verdict, color),
+        protonaut_core::report::headline(report),
         n.pass,
         n.fail,
         n.warning,
@@ -405,6 +428,44 @@ fn print_summary(report: &Report, results: &Path, json: bool) -> Result<(), CliE
         results.join("report.html").display()
     );
     Ok(())
+}
+
+fn severity(status: &str) -> u8 {
+    match status {
+        "PASS" => 0,
+        "WARNING" => 2,
+        "FAIL" => 3,
+        _ => 1,
+    }
+}
+
+fn step(message: &str) {
+    eprintln!("> {message}");
+}
+
+fn paint(text: &str, code: &str, color: bool) -> String {
+    if color {
+        format!("[{code}m{text}[0m")
+    } else {
+        text.to_owned()
+    }
+}
+
+fn status_label(status: &str, color: bool) -> String {
+    let code = match status {
+        "PASS" => "32",
+        "FAIL" => "1;31",
+        "WARNING" => "33",
+        _ => "2",
+    };
+    paint(&format!("{status:<10}"), code, color)
+}
+
+fn verdict_label(verdict: Verdict, color: bool) -> String {
+    match verdict {
+        Verdict::Pass => paint("GO.", "1;32", color),
+        Verdict::Fail => paint("NO-GO.", "1;31", color),
+    }
 }
 
 fn verdict_code(report: &Report) -> u8 {
@@ -513,8 +574,8 @@ fn setup(print: bool) -> Result<u8, CliError> {
 
 fn schema(write: bool) -> Result<u8, CliError> {
     let schemas = [
-        ("report.v1.schema.json", preflight_core::report_schema()),
-        ("config.v1.schema.json", preflight_core::config_schema()),
+        ("report.v1.schema.json", protonaut_core::report_schema()),
+        ("config.v1.schema.json", protonaut_core::config_schema()),
     ];
     for (name, value) in schemas {
         let text = serde_json::to_string_pretty(&value).map_err(env_err)? + "\n";
@@ -529,4 +590,31 @@ fn schema(write: bool) -> Result<u8, CliError> {
         }
     }
     Ok(exit::PASS)
+}
+
+#[cfg(test)]
+mod output_tests {
+    use super::*;
+
+    #[test]
+    fn labels_are_plain_without_color() {
+        assert_eq!(status_label("FAIL", false), "FAIL      ");
+        assert_eq!(verdict_label(Verdict::Fail, false), "NO-GO.");
+        assert_eq!(verdict_label(Verdict::Pass, false), "GO.");
+    }
+
+    #[test]
+    fn failures_sort_last_so_they_sit_above_the_verdict() {
+        let mut statuses = ["FAIL", "PASS", "WARNING", "NOT_TESTED", "UNKNOWN"];
+        statuses.sort_by_key(|s| severity(s));
+        assert_eq!(
+            statuses,
+            ["PASS", "NOT_TESTED", "UNKNOWN", "WARNING", "FAIL"]
+        );
+    }
+
+    #[test]
+    fn color_keeps_column_padding() {
+        assert_eq!(status_label("PASS", true), "[32mPASS      [0m");
+    }
 }

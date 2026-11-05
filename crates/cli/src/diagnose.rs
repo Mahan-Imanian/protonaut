@@ -1,7 +1,7 @@
 use std::path::Path;
 
-use preflight_runtime::display::{SYSTEM_CONFIG_DIR, SYSTEM_CONFIG_NAME};
-use preflight_runtime::install::{Cache, Manifest, default_cache_dir};
+use protonaut_runtime::display::{SYSTEM_CONFIG_DIR, SYSTEM_CONFIG_NAME};
+use protonaut_runtime::install::{Cache, Manifest, default_cache_dir};
 
 use crate::exit;
 
@@ -68,18 +68,18 @@ pub async fn run(json: bool) -> u8 {
     tool("tar", on_path("tar"), APT);
     tool(
         "Mesa lavapipe Vulkan driver",
-        preflight_runtime::proton::lavapipe_icd().is_some(),
+        protonaut_runtime::proton::lavapipe_icd().is_some(),
         APT,
     );
 
     items.push(Item {
-        name: "tesseract (OCR for SP-DISP-005)",
+        name: "tesseract (OCR for PN-DISP-005)",
         ok: on_path("tesseract"),
         required: false,
         detail: if on_path("tesseract") {
             "found".into()
         } else {
-            "missing: SP-DISP-005 will be NOT_TESTED; install tesseract-ocr tesseract-ocr-eng"
+            "missing: PN-DISP-005 will be NOT_TESTED; install tesseract-ocr tesseract-ocr-eng"
                 .into()
         },
     });
@@ -112,10 +112,7 @@ pub async fn run(json: bool) -> u8 {
         } else if conf.is_file() {
             format!("{} found", conf.display())
         } else {
-            format!(
-                "{} missing: run `sudo steamos-preflight setup`",
-                conf.display()
-            )
+            format!("{} missing: run `sudo protonaut setup`", conf.display())
         },
     });
     items.push(Item {
@@ -155,7 +152,7 @@ pub async fn run(json: bool) -> u8 {
                     ok: !installed.is_empty(),
                     required: false,
                     detail: if installed.is_empty() {
-                        "none: run `steamos-preflight proton install stable`".into()
+                        "none: run `protonaut proton install stable`".into()
                     } else {
                         installed.join(", ")
                     },
@@ -166,7 +163,7 @@ pub async fn run(json: bool) -> u8 {
             name: "Runtime cache",
             ok: false,
             required: true,
-            detail: "no HOME and no STEAMOS_PREFLIGHT_CACHE".into(),
+            detail: "no HOME and no PROTONAUT_CACHE".into(),
         }),
     }
     let tmp = std::env::temp_dir();
@@ -198,7 +195,7 @@ pub async fn run(json: bool) -> u8 {
         println!(
             "\n{}",
             if ready {
-                "Ready to run `steamos-preflight test`."
+                "Ready to run `protonaut test`."
             } else {
                 "Not ready: fix the FAIL lines above."
             }

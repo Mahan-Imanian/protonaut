@@ -6,8 +6,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 fn bin() -> Command {
-    let mut c = Command::new(env!("CARGO_BIN_EXE_steamos-preflight"));
-    c.env_remove("STEAMOS_PREFLIGHT_CONFIG");
+    let mut c = Command::new(env!("CARGO_BIN_EXE_protonaut"));
+    c.env_remove("PROTONAUT_CONFIG");
     c
 }
 
@@ -74,10 +74,10 @@ fn inspect_clean_fixture_passes_with_exit_0() {
         String::from_utf8_lossy(&out.stderr)
     );
     assert_eq!(r["schema_version"], 1);
-    assert_eq!(status(&r, "SP-PE-001"), "PASS");
-    assert_eq!(status(&r, "SP-PE-002"), "PASS");
+    assert_eq!(status(&r, "PN-PE-001"), "PASS");
+    assert_eq!(status(&r, "PN-PE-002"), "PASS");
     // No runtime installed in this empty cache: imports cannot be judged.
-    assert_eq!(status(&r, "SP-PE-003"), "UNKNOWN");
+    assert_eq!(status(&r, "PN-PE-003"), "UNKNOWN");
     assert_eq!(
         r["target"]["exe"], "Game.exe",
         "case-insensitive lookup returns the real name"
@@ -97,8 +97,8 @@ fn inspect_flags_anti_cheat_and_case_collisions() {
     let cache = tempfile::tempdir().unwrap();
     let (out, r) = inspect(build.path(), cache.path());
     assert_eq!(out.status.code(), Some(1), "case collision is a FAIL");
-    assert_eq!(status(&r, "SP-AC-001"), "WARNING");
-    assert_eq!(status(&r, "SP-FS-001"), "FAIL");
+    assert_eq!(status(&r, "PN-AC-001"), "WARNING");
+    assert_eq!(status(&r, "PN-FS-001"), "FAIL");
 }
 
 #[test]
@@ -108,7 +108,7 @@ fn inspect_rejects_non_pe_executable() {
     let cache = tempfile::tempdir().unwrap();
     let (out, r) = inspect(dir.path(), cache.path());
     assert_eq!(out.status.code(), Some(1));
-    assert_eq!(status(&r, "SP-PE-001"), "FAIL");
+    assert_eq!(status(&r, "PN-PE-001"), "FAIL");
 }
 
 #[test]
@@ -252,7 +252,7 @@ fn init_writes_a_valid_starter_config_once() {
     let run = || bin().arg("init").current_dir(dir.path()).output().unwrap();
     assert_eq!(run().status.code(), Some(0));
     assert_eq!(run().status.code(), Some(2), "refuses to overwrite");
-    let text = std::fs::read_to_string(dir.path().join("preflight.toml")).unwrap();
+    let text = std::fs::read_to_string(dir.path().join("protonaut.toml")).unwrap();
     assert!(text.contains("schema_version = 1"));
 }
 
@@ -279,7 +279,7 @@ fn proton_list_and_schema_and_version_work() {
     let out = bin().arg("schema").output().unwrap();
     assert!(String::from_utf8_lossy(&out.stdout).contains("report.v1.schema.json"));
     let out = bin().arg("--version").output().unwrap();
-    assert!(String::from_utf8_lossy(&out.stdout).starts_with("steamos-preflight "));
+    assert!(String::from_utf8_lossy(&out.stdout).starts_with("protonaut "));
 }
 
 #[test]

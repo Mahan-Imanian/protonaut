@@ -12,9 +12,9 @@ use crate::model::{
     RunSummary, Status, StatusCounts, Summary, TargetInfo, ToolInfo, Verdict, verdict,
 };
 
-pub const TOOL_NAME: &str = "steamos-preflight";
+pub const TOOL_NAME: &str = "protonaut";
 /// Hidden marker used to find and update an earlier PR comment.
-pub const COMMENT_MARKER: &str = "<!-- steamos-preflight-report -->";
+pub const COMMENT_MARKER: &str = "<!-- protonaut-report -->";
 const MAX_DETAILS_RENDERED: usize = 10;
 const MAX_TEXT: usize = 300;
 
@@ -163,7 +163,7 @@ pub fn render_markdown(r: &Report, artifact_url: Option<&str>) -> String {
         (Verdict::Pass, 0) => "✅",
         (Verdict::Pass, _) => "⚠️",
     };
-    let head = format!("{icon} SteamOS Preflight: {}", headline(r));
+    let head = format!("{icon} Protonaut: {}", headline(r));
     let _ = writeln!(s, "{COMMENT_MARKER}\n## {head}\n");
     let _ = writeln!(
         s,
@@ -236,7 +236,7 @@ pub fn render_markdown(r: &Report, artifact_url: Option<&str>) -> String {
     }
     let _ = writeln!(
         s,
-        "<sub>Independent community tool, not affiliated with Valve. It cannot predict a Steam Deck Verified rating; software rendering does not test GPU performance or controller feel.</sub>"
+        "<sub>Tested with [Protonaut](https://github.com/Mahan-Imanian/protonaut). Independent community tool, not affiliated with Valve. It cannot predict a Steam Deck Verified rating; software rendering does not test GPU performance or controller feel.</sub>"
     );
     s
 }
@@ -294,14 +294,14 @@ pub fn render_junit(r: &Report) -> String {
     let mut s = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     let _ = writeln!(
         s,
-        "<testsuites name=\"steamos-preflight\" tests=\"{}\" failures=\"{}\" skipped=\"{}\">",
+        "<testsuites name=\"protonaut\" tests=\"{}\" failures=\"{}\" skipped=\"{}\">",
         r.checks.len(),
         c.fail,
         c.unknown + c.not_tested
     );
     let _ = writeln!(
         s,
-        "  <testsuite name=\"steamos-preflight\" tests=\"{}\" failures=\"{}\" skipped=\"{}\">",
+        "  <testsuite name=\"protonaut\" tests=\"{}\" failures=\"{}\" skipped=\"{}\">",
         r.checks.len(),
         c.fail,
         c.unknown + c.not_tested
@@ -313,7 +313,7 @@ pub fn render_junit(r: &Report) -> String {
         };
         let _ = write!(
             s,
-            "    <testcase classname=\"steamos-preflight.{:?}\" name=\"{}\"",
+            "    <testcase classname=\"protonaut.{:?}\" name=\"{}\"",
             check.category,
             xml_escape(&name)
         );
@@ -373,8 +373,8 @@ pub fn render_html(r: &Report) -> String {
         s,
         "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\
 <meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src 'self'; style-src 'unsafe-inline'\">\
-<title>SteamOS Preflight report</title><style>{CSS}</style></head><body><main>\
-<h1>SteamOS Preflight <span class=\"v {}\">{}</span></h1>\
+<title>Protonaut report</title><style>{CSS}</style></head><body><main>\
+<h1>Protonaut <span class=\"v {}\">{}</span></h1>\
 <p class=\"meta\"><code>{}</code> · {} · {} pass · {} fail · {} warning · {} unknown · {} not tested</p>",
         match (r.summary.verdict, c.warning) {
             (Verdict::Fail, _) => "bad",
@@ -451,7 +451,7 @@ pub fn render_html(r: &Report) -> String {
     }
     let _ = writeln!(
         s,
-        "</ul><p class=\"meta\">{} {} · report schema v{}</p></main></body></html>",
+        "</ul><p class=\"meta\"><a href=\"https://github.com/Mahan-Imanian/protonaut\">{}</a> {} · report schema v{}</p></main></body></html>",
         html_escape(&r.tool.name),
         html_escape(&r.tool.version),
         r.schema_version
@@ -476,7 +476,7 @@ mod tests {
 
     fn sample(status: Status) -> Report {
         let check = CheckResult::new(
-            "SP-AC-001",
+            "PN-AC-001",
             "Anti-cheat",
             Category::Static,
             status,
@@ -522,8 +522,7 @@ mod tests {
         let w = sample(Status::Warning);
         assert_eq!(headline(&w), "No failures, 1 warning to review");
         assert!(
-            render_markdown(&w, None)
-                .contains("⚠️ SteamOS Preflight: No failures, 1 warning to review")
+            render_markdown(&w, None).contains("⚠️ Protonaut: No failures, 1 warning to review")
         );
         assert!(render_html(&w).contains("class=\"v warn\""));
         assert_eq!(headline(&sample(Status::Fail)), "Failures found");
@@ -577,7 +576,7 @@ mod tests {
     fn html_lists_problems_before_passes() {
         let mut r = sample(Status::Pass);
         r.checks.push(CheckResult::new(
-            "SP-RUN-002",
+            "PN-RUN-002",
             "Stability",
             Category::Runtime,
             Status::Fail,
@@ -585,7 +584,7 @@ mod tests {
             "crashed",
         ));
         let h = render_html(&r);
-        assert!(h.find("SP-RUN-002").unwrap() < h.find("SP-AC-001").unwrap());
+        assert!(h.find("PN-RUN-002").unwrap() < h.find("PN-AC-001").unwrap());
     }
 
     #[test]
@@ -598,7 +597,7 @@ mod tests {
     fn skipped_checks_are_removed_and_order_is_stable() {
         let mut input_checks = vec![
             CheckResult::new(
-                "SP-RUN-001",
+                "PN-RUN-001",
                 "r",
                 Category::Runtime,
                 Status::Pass,
@@ -606,7 +605,7 @@ mod tests {
                 "s",
             ),
             CheckResult::new(
-                "SP-PE-001",
+                "PN-PE-001",
                 "p",
                 Category::Static,
                 Status::Pass,
@@ -614,7 +613,7 @@ mod tests {
                 "s",
             ),
             CheckResult::new(
-                "SP-MEDIA-001",
+                "PN-MEDIA-001",
                 "m",
                 Category::Static,
                 Status::Warning,
@@ -633,10 +632,10 @@ mod tests {
             runs: vec![],
             checks: input_checks,
             fail_on: FailOn::Fail,
-            skip: vec!["SP-MEDIA-001".into()],
+            skip: vec!["PN-MEDIA-001".into()],
         });
         let ids: Vec<_> = r.checks.iter().map(|c| c.id.as_str()).collect();
-        assert_eq!(ids, vec!["SP-PE-001", "SP-RUN-001"]);
+        assert_eq!(ids, vec!["PN-PE-001", "PN-RUN-001"]);
         assert_eq!(r.summary.counts.warning, 0);
     }
 

@@ -1,4 +1,4 @@
-# Runtimes this release of steamos-preflight has verified end to end.
+# Runtimes this release of protonaut has verified end to end.
 # Each entry is pinned by URL and SHA-256; a download that does not match is
 # rejected. `stable` must point at an entry listed here.
 #

@@ -30,19 +30,19 @@ cargo build --release
 ```
 
 ```bash
-sudo target/release/steamos-preflight setup
+sudo target/release/protonaut setup
 ```
 
 ```bash
-target/release/steamos-preflight proton install stable
+target/release/protonaut proton install stable
 ```
 
 ```bash
-target/release/steamos-preflight diagnose
+target/release/protonaut diagnose
 ```
 
 ```bash
-python3 scripts/e2e.py --bin target/release/steamos-preflight --runtime ge-proton11-12
+python3 scripts/e2e.py --bin target/release/protonaut --runtime ge-proton11-12
 ```
 
 `scripts/e2e.py` runs every fixture and compares the results with
@@ -54,8 +54,8 @@ artifact. No Steam Deck or GPU is needed.
 | Change | Also update |
 |---|---|
 | A check's meaning | Give it a new id; `docs/reference/checks.md` |
-| The report model | `cargo run -p steamos-preflight -- schema --write`, `docs/reference/report-format.md` |
-| `preflight.toml` | The same schema command, `STARTER_CONFIG` in `crates/core/src/config.rs` |
+| The report model | `cargo run -p protonaut -- schema --write`, `docs/reference/report-format.md` |
+| `protonaut.toml` | The same schema command, `STARTER_CONFIG` in `crates/core/src/config.rs` |
 | A fixture | `scripts/build-fixtures.sh`, `fixtures/README.md`, expectations |
 | A runtime | `crates/runtime/runtimes.toml`, `docs/compatibility/runtimes.md` |
 

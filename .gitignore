@@ -28,5 +28,5 @@ $RECYCLE.BIN/
 # Rust build output.
 target/
 
-# Local preflight results.
-/preflight-results/
+# Local Protonaut results.
+/protonaut-results/
