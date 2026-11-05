@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Renders the README wordmarks, social preview, profile card and favicon from
+# the .tpl pages. Needs the browser that render.sh uses, and ffmpeg.
 set -euo pipefail
 cd "$(dirname "$0")"
 F='<style>

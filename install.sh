@@ -1,4 +1,7 @@
 #!/bin/sh
+# Installs the latest protonaut release after checking its SHA-256, and its
+# build provenance when a signed-in gh CLI is available. --with-deps also
+# installs the apt packages a test run needs.
 set -eu
 
 repo=Mahan-Imanian/protonaut

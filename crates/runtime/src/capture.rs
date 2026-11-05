@@ -1,3 +1,6 @@
+//! Reading the display during a run: frame statistics from a screenshot,
+//! on-screen text through Tesseract, and the X11 windows that are visible.
+
 use std::path::Path;
 use std::time::Duration;
 

@@ -1,3 +1,5 @@
+# Publishes site/ to GitHub Pages, copying in the fonts and images it uses
+# from docs/assets.
 name: Website
 
 on:
