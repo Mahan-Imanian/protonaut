@@ -8,13 +8,13 @@
 <link rel="canonical" href="https://mahan-imanian.github.io/protonaut/">
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Protonaut: go / no-go for your Windows game build on Proton">
+<meta property="og:title" content="Protonaut: test your Windows game build on Proton in CI">
 <meta property="og:description" content="Run your build under GE-Proton on every pull request. Crashes, black screens and letterboxing turn the PR red, with screenshots and logs.">
 <meta property="og:url" content="https://mahan-imanian.github.io/protonaut/">
 <meta property="og:image" content="https://mahan-imanian.github.io/protonaut/assets/social-preview.png">
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Protonaut","applicationCategory":"DeveloperApplication","operatingSystem":"Linux","license":"https://spdx.org/licenses/MIT.html","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://mahan-imanian.github.io/protonaut/","codeRepository":"https://github.com/Mahan-Imanian/protonaut","description":"GitHub Action and CLI that tests Windows game builds under GE-Proton in CI."}
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Protonaut","applicationCategory":"DeveloperApplication","operatingSystem":"Linux","license":"https://spdx.org/licenses/Apache-2.0.html","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://mahan-imanian.github.io/protonaut/","codeRepository":"https://github.com/Mahan-Imanian/protonaut","description":"GitHub Action and CLI that tests Windows game builds under GE-Proton in CI."}
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
@@ -71,9 +71,9 @@ pre{background:var(--panel);border:1px solid var(--line);padding:18px;overflow-x
 .catch div:hover{background:var(--panel)}
 .catch h3{font-weight:600;font-size:27px;margin-bottom:8px;color:var(--orange)}
 .catch p{margin:0;color:var(--mute);font-size:15px}
-ol.t{list-style:none;padding:0;margin:0;counter-reset:s 5}
-ol.t li{counter-increment:s -1;display:grid;grid-template-columns:70px 1fr;padding:18px 0;border-bottom:1px solid var(--line)}
-ol.t li:before{content:"T-" counter(s);font:800 30px/1 "Saira Condensed";color:var(--orange)}
+ol.t{list-style:none;padding:0;margin:0;counter-reset:s}
+ol.t li{counter-increment:s;display:grid;grid-template-columns:48px 1fr;padding:18px 0;border-bottom:1px solid var(--line)}
+ol.t li:before{content:counter(s);font:800 30px/1 "Saira Condensed";color:var(--orange)}
 table{width:100%;border-collapse:collapse;font-size:15px}
 th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line)}
 th{font:600 20px "Saira Condensed"}
@@ -97,18 +97,18 @@ footer{padding:34px 0;border-top:1px solid var(--line);color:var(--mute);font-si
 <nav><a class="brand" href="#">PROTONAUT</a><div><a href="#start">Quick start</a><a href="#catches">What it catches</a><a href="#faq">FAQ</a><a href="https://github.com/Mahan-Imanian/protonaut">GitHub</a></div></nav>
 <header class="hero">
 <div>
-<h1>Go / no-go for your Windows build <em>on Proton.</em></h1>
+<h1>Test your Windows game build <em>on Proton.</em></h1>
 <p class="lead">Protonaut is a GitHub Action and CLI that runs your game under pinned GE-Proton on every pull request. When a change makes it crash or render black, the PR goes red, with screenshots and logs. You don't need a Steam Deck.</p>
 <a class="cta" href="#start">Add it to your CI &raquo;</a><a class="cta2" href="https://github.com/Mahan-Imanian/protonaut">View on GitHub</a>
 </div>
 <div class="board" aria-label="Example results from the crash test build">
 <div class="bar"><span>protonaut test dist/Windows</span><span>crash fixture, example</span></div>
 <div class="rows" id="rows"></div>
-<div class="call" id="call"><span>HOLD</span></div>
+<div class="call" id="call"><span>RUNNING</span></div>
 </div>
 </header>
 
-<section class="r"><h2>A real run</h2><img src="assets/demo.gif" alt="A terminal running protonaut test on a test build that crashes under Proton, ending in a NO-GO verdict" style="width:100%;height:auto;display:block;border:1px solid var(--line)"><p style="color:var(--mute)">Recorded from a real CI run on one of the test builds. The <a href="https://github.com/Mahan-Imanian/protonaut-demo/pull/1">demo pull request</a> shows the same crash going red, with the report posted as a comment.</p></section>
+<section class="r"><h2>A real run</h2><img src="assets/demo.gif" alt="A terminal running protonaut test on a test build that crashes under Proton, ending with two failures" style="width:100%;height:auto;display:block;border:1px solid var(--line)"><p style="color:var(--mute)">Recorded from a real CI run on one of the test builds. The <a href="https://github.com/Mahan-Imanian/protonaut-demo/pull/1">demo pull request</a> shows the same crash going red, with the report posted as a comment.</p></section>
 
 <section id="start" class="r"><h2>One step in your workflow</h2>
 <div class="two">
@@ -131,8 +131,8 @@ protonaut test dist/Windows --exe MyGame.exe --install</pre><p style="color:var(
 <p style="color:var(--mute)">Missing evidence is never reported as a pass. If a screenshot can't be captured, the check says <code>NOT_TESTED</code>. CI also runs OpenTTD 15.3, a Godot 4.7.2 3D game and Chocolate Doom 3.0.1 through the action. <a href="https://github.com/Mahan-Imanian/protonaut/blob/main/docs/compatibility/real-games.md">See the results.</a></p>
 </section>
 
-<section class="r"><h2>Countdown</h2>
-<ol class="t" reversed>
+<section class="r"><h2>How it works</h2>
+<ol class="t">
 <li>Your build runs under a pinned, checksum-verified GE-Proton release with Mesa's software Vulkan driver on a headless display at 1280x800.</li>
 <li>A control program that draws a known colour runs first. If its frame can't be captured, screenshot checks report NOT_TESTED, not a false black screen.</li>
 <li>Your game runs as an unprivileged user with no network and no CI token. Protonaut records windows, screenshots and the Wine log, then stops every process.</li>
@@ -161,14 +161,14 @@ protonaut test dist/Windows --exe MyGame.exe --install</pre><p style="color:var(
 <details><summary>Is this Valve's Proton?</summary><p>No. Protonaut uses GE-Proton, a community build, because Valve's builds need a Steam login. A game can behave differently under Valve's Proton.</p></details>
 </section>
 
-<footer>Protonaut is an independent community project, not affiliated with or endorsed by Valve. Proton and Steam Deck are trademarks of Valve Corporation. Licensed under MIT or Apache-2.0.</footer>
+<footer>Protonaut is an independent community project, not affiliated with or endorsed by Valve. Proton and Steam Deck are trademarks of Valve Corporation. Licensed under Apache-2.0.</footer>
 </div>
 <script>
 var checks=[["PASS","PN-PE-003 Imported DLLs are available","pass"],["PASS","PN-RUN-001 Game process starts under Proton","pass"],["FAIL","PN-RUN-002 Crashed after 4.1 s","fail"],["FAIL","PN-RUN-003 1 crash signature in the Wine log","fail"],["N/T","PN-HW-001 Frame rate needs real hardware","nt"]];
 var rows=document.getElementById("rows"),call=document.getElementById("call");
-function run(){rows.innerHTML="";call.className="call";call.innerHTML="<span>HOLD</span><small>running checks</small>";
+function run(){rows.innerHTML="";call.className="call";call.innerHTML="<span>RUNNING</span><small>checks in progress</small>";
 checks.forEach(function(c,i){setTimeout(function(){var d=document.createElement("div");d.className="row";d.innerHTML='<b class="s-'+c[2]+'">'+c[0]+"</b><span>"+c[1]+"</span>";rows.appendChild(d)},500+i*750)});
-setTimeout(function(){call.className="call nogo";call.innerHTML="<span>NO-GO</span><small>PR goes red</small>"},500+checks.length*750);
+setTimeout(function(){call.className="call nogo";call.innerHTML="<span>FAILED</span><small>PR goes red</small>"},500+checks.length*750);
 setTimeout(run,500+checks.length*750+4200)}
 run();
 document.querySelectorAll(".copy button").forEach(function(b){b.onclick=function(){navigator.clipboard.writeText(document.getElementById(b.dataset.c).textContent);b.textContent="Copied";setTimeout(function(){b.textContent="Copy"},1400)}});

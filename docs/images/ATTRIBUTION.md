@@ -1,7 +1,7 @@
 # Image attribution
 
 - `report.png` shows a Protonaut report for this project's own
-  test fixture (MIT OR Apache-2.0, like the rest of this repository).
+  test fixture (Apache-2.0, like the rest of this repository).
 - `real-godot-d3d12.png` is a frame captured by Protonaut from the
   "Platformer 3D" demo of
   [godot-demo-projects](https://github.com/godotengine/godot-demo-projects),

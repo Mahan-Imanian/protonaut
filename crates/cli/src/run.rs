@@ -417,9 +417,8 @@ fn print_summary(report: &Report, results: &Path, json: bool) -> Result<(), CliE
     let n = &report.summary.counts;
     println!(
         "
-{} {}: {} pass, {} fail, {} warning, {} unknown, {} not tested. Report: {}",
-        verdict_label(report.summary.verdict, color),
-        protonaut_core::report::headline(report),
+{}: {} pass, {} fail, {} warning, {} unknown, {} not tested. Report: {}",
+        headline_label(report, color),
         n.pass,
         n.fail,
         n.warning,
@@ -461,11 +460,12 @@ fn status_label(status: &str, color: bool) -> String {
     paint(&format!("{status:<10}"), code, color)
 }
 
-fn verdict_label(verdict: Verdict, color: bool) -> String {
-    match verdict {
-        Verdict::Pass => paint("GO.", "1;32", color),
-        Verdict::Fail => paint("NO-GO.", "1;31", color),
-    }
+fn headline_label(report: &Report, color: bool) -> String {
+    let code = match report.summary.verdict {
+        Verdict::Pass => "1;32",
+        Verdict::Fail => "1;31",
+    };
+    paint(&protonaut_core::report::headline(report), code, color)
 }
 
 fn verdict_code(report: &Report) -> u8 {
@@ -599,12 +599,10 @@ mod output_tests {
     #[test]
     fn labels_are_plain_without_color() {
         assert_eq!(status_label("FAIL", false), "FAIL      ");
-        assert_eq!(verdict_label(Verdict::Fail, false), "NO-GO.");
-        assert_eq!(verdict_label(Verdict::Pass, false), "GO.");
     }
 
     #[test]
-    fn failures_sort_last_so_they_sit_above_the_verdict() {
+    fn failures_sort_last_so_they_sit_above_the_summary() {
         let mut statuses = ["FAIL", "PASS", "WARNING", "NOT_TESTED", "UNKNOWN"];
         statuses.sort_by_key(|s| severity(s));
         assert_eq!(
