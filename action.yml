@@ -1,4 +1,4 @@
-name: Protonaut
+name: Protonaut CI
 description: Test Windows game builds under Proton in CI. Catches crashes, black screens and letterboxing. Not affiliated with Valve.
 author: Protonaut contributors
 branding:
