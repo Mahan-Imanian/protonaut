@@ -522,8 +522,7 @@ mod tests {
         let w = sample(Status::Warning);
         assert_eq!(headline(&w), "No failures, 1 warning to review");
         assert!(
-            render_markdown(&w, None)
-                .contains("⚠️ Protonaut: No failures, 1 warning to review")
+            render_markdown(&w, None).contains("⚠️ Protonaut: No failures, 1 warning to review")
         );
         assert!(render_html(&w).contains("class=\"v warn\""));
         assert_eq!(headline(&sample(Status::Fail)), "Failures found");

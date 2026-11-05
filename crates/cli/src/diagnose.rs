@@ -112,10 +112,7 @@ pub async fn run(json: bool) -> u8 {
         } else if conf.is_file() {
             format!("{} found", conf.display())
         } else {
-            format!(
-                "{} missing: run `sudo protonaut setup`",
-                conf.display()
-            )
+            format!("{} missing: run `sudo protonaut setup`", conf.display())
         },
     });
     items.push(Item {

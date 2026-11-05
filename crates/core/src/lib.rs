@@ -33,8 +33,7 @@ fn schema_value(schema: schemars::Schema, file: &str, title: &str) -> serde_json
     if let Some(obj) = v.as_object_mut() {
         obj.insert(
             "$id".into(),
-            format!("https://github.com/Mahan-Imanian/protonaut/blob/main/schemas/{file}")
-                .into(),
+            format!("https://github.com/Mahan-Imanian/protonaut/blob/main/schemas/{file}").into(),
         );
         obj.insert("title".into(), title.into());
     }
