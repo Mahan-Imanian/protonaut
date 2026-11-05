@@ -416,8 +416,7 @@ fn print_summary(report: &Report, results: &Path, json: bool) -> Result<(), CliE
     }
     let n = &report.summary.counts;
     println!(
-        "
-{}: {} pass, {} fail, {} warning, {} unknown, {} not tested. Report: {}",
+        "\n{}: {} pass, {} fail, {} warning, {} unknown, {} not tested. Report: {}",
         headline_label(report, color),
         n.pass,
         n.fail,
@@ -444,7 +443,7 @@ fn step(message: &str) {
 
 fn paint(text: &str, code: &str, color: bool) -> String {
     if color {
-        format!("[{code}m{text}[0m")
+        format!("\x1b[{code}m{text}\x1b[0m")
     } else {
         text.to_owned()
     }
@@ -613,6 +612,6 @@ mod output_tests {
 
     #[test]
     fn color_keeps_column_padding() {
-        assert_eq!(status_label("PASS", true), "[32mPASS      [0m");
+        assert_eq!(status_label("PASS", true), "\x1b[32mPASS      \x1b[0m");
     }
 }
