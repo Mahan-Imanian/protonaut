@@ -1,7 +1,7 @@
 # GitHub Action
 
 ```yaml
-- uses: Mahan-Imanian/steamos-preflight@v0.1.0
+- uses: Mahan-Imanian/steamos-preflight@v0.1.1
   with:
     build: dist/Windows
     exe: MyGame.exe
@@ -71,7 +71,7 @@ jobs:
           persist-credentials: false
       - run: ./build-windows.sh            # your build
       - id: preflight
-        uses: Mahan-Imanian/steamos-preflight@v0.1.0
+        uses: Mahan-Imanian/steamos-preflight@v0.1.1
         with:
           fail-job: "false"
           build: dist/Windows
@@ -95,7 +95,7 @@ jobs:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: preflight-report
-      - uses: Mahan-Imanian/steamos-preflight/comment@v0.1.0
+      - uses: Mahan-Imanian/steamos-preflight/comment@v0.1.1
         with:
           report: report.json
           pr-number: ${{ github.event.pull_request.number }}
@@ -111,14 +111,14 @@ A complete workflow is in [examples/github-actions.yml](../examples/github-actio
 
 ## Pinning
 
-`@v0.1.0` installs the release binary. Before running it, the action checks
+`@v0.1.1` installs the release binary. Before running it, the action checks
 it against the release's `SHA256SUMS` and verifies its GitHub build
 provenance attestation: it must have been built by this repository's
-`release.yml` workflow from the `refs/tags/v0.1.0` ref on a GitHub-hosted
+`release.yml` workflow from the `refs/tags/v0.1.1` ref on a GitHub-hosted
 runner. Any mismatch stops the job.
 
 Tags can be moved. For an immutable pin, use the full commit SHA that
-`v0.1.0` points to. With any ref other than a `vX.Y.Z` tag, including a commit
+`v0.1.1` points to. With any ref other than a `vX.Y.Z` tag, including a commit
 SHA, the action builds the CLI from source with `cargo build --locked`, which
 adds about three minutes to the first use in a job. There is no `v0` major
 tag yet; one will follow the 1.0 stability commitment.

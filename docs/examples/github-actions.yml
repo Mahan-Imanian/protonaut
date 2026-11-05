@@ -22,7 +22,7 @@ jobs:
         run: ./build-windows.sh # produces dist/Windows/MyGame.exe
 
       - id: preflight
-        uses: Mahan-Imanian/steamos-preflight@v0.1.0
+        uses: Mahan-Imanian/steamos-preflight@v0.1.1
         with:
           fail-job: "false" # keep the outputs; the last step fails the job
           build: dist/Windows
@@ -51,7 +51,7 @@ jobs:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: preflight-report
-      - uses: Mahan-Imanian/steamos-preflight/comment@v0.1.0
+      - uses: Mahan-Imanian/steamos-preflight/comment@v0.1.1
         with:
           report: report.json
           pr-number: ${{ github.event.pull_request.number }}
