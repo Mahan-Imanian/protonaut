@@ -1,3 +1,7 @@
+//! Checks that only read the build, before Proton starts: executable format,
+//! DLL imports nothing provides, paths that differ only by case, anti-cheat,
+//! launchers, Media Foundation video and the Steamworks APIs.
+
 use std::collections::BTreeSet;
 
 use crate::inspect::{BuildTree, PeArch, PeError, PeInfo};

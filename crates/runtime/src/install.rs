@@ -1,3 +1,7 @@
+//! Pinned Proton runtimes: the built-in manifest (`runtimes.toml`), the
+//! download cache, and checksum-verified installs that are used only once
+//! fully extracted.
+
 use std::collections::BTreeSet;
 use std::fs;
 use std::io::Read;

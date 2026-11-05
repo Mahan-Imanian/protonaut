@@ -1,3 +1,6 @@
+//! `protonaut.toml`: parsing and validation. Limits on game arguments,
+//! observation time and resolution are enforced here, before anything runs.
+
 use std::fmt;
 use std::path::{Component, Path, PathBuf};
 use std::str::FromStr;

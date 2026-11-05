@@ -1,3 +1,5 @@
+# Every push and pull request: Rust checks, the minimum supported Rust,
+# reproducible fixtures, dependency policy, workflow lint and doc links.
 name: CI
 
 on:

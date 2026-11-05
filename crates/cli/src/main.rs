@@ -1,3 +1,6 @@
+//! The `protonaut` command line: arguments, logging and the exit codes that
+//! scripts rely on. The subcommands themselves are in `run.rs`.
+
 mod diagnose;
 mod run;
 

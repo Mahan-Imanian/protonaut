@@ -1,3 +1,7 @@
+//! Runs a build under GE-Proton. A control program goes first to prove that
+//! frames can be captured; then the game runs while screenshots, windows and
+//! the Wine log are collected, and every process is stopped at the end.
+
 use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
