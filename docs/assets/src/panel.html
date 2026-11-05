@@ -1,0 +1,49 @@
+<div class="edge"><div class="panel">
+  <div class="bar"><span class="exe">MYGAME.EXE</span><span class="dim">GE-PROTON11-12</span><span class="dim">1280 X 800</span><b class="chip">CRASHED</b></div>
+  <div class="main">
+    <div class="big">
+      <span class="lab">CRASHED AFTER</span>
+      <div class="num">2.8<small>S</small></div>
+      <div class="mini"><div><b>148</b><span>EXIT CODE</span></div><div><b>1</b><span>CRASH SIGNATURE</span></div></div>
+    </div>
+    <div class="list">
+      <div><i class="p">PASS</i><u>PN-PE-003</u>Imported DLLs are available</div>
+      <div><i class="p">PASS</i><u>PN-RUN-001</u>Game process starts under Proton</div>
+      <div><i class="p">PASS</i><u>PN-DISP-001</u>Game opens a window</div>
+      <div class="bad"><i class="f">FAIL</i><u>PN-RUN-002</u>Game keeps running</div>
+      <div class="bad"><i class="f">FAIL</i><u>PN-RUN-003</u>No crash signatures in the log</div>
+      <div class="dimrow"><i>N/T</i><u>PN-HW-001</u>Frame rate needs real hardware</div>
+    </div>
+  </div>
+  <pre>wine: Unhandled division by zero at address 00006FFFFD7B18C3</pre>
+  <div class="foot">
+    <div class="cells"><s class="p"></s><s class="p"></s><s class="p"></s><s class="p"></s><s class="p"></s><s class="p"></s><s class="p"></s><s class="p"></s><s class="p"></s><s class="p"></s><s class="f"></s><s class="f"></s><s class="u"></s><s class="u"></s><s></s><s></s><s></s><s></s><s></s><s></s></div>
+    <div class="count"><em class="pc">10 PASS</em><em class="fc">2 FAIL</em><em>2 UNKNOWN</em><em>6 NOT TESTED</em></div>
+  </div>
+</div></div>
+<style>
+.edge{--cut:22px;width:900px;background:#39414D;padding:1px;clip-path:polygon(var(--cut) 0,100% 0,100% 100%,0 100%,0 var(--cut))}
+.panel{background:#151A21;clip-path:polygon(var(--cut) 0,100% 0,100% 100%,0 100%,0 var(--cut));color:#ECE8E1}
+.bar{display:flex;align-items:center;gap:26px;height:62px;padding:0 24px 0 34px;border-bottom:1px solid #2C333D;font:600 23px/1 "Saira Condensed";letter-spacing:.09em}
+.exe{font-weight:800}.dim{color:#8A94A3}
+.chip{margin-left:auto;background:#FF4D4D;color:#0B0E13;font:800 22px/1 "Saira Condensed";letter-spacing:.09em;padding:7px 14px;clip-path:polygon(8px 0,100% 0,100% 100%,0 100%,0 8px)}
+.main{display:grid;grid-template-columns:290px 1fr;border-bottom:1px solid #2C333D}
+.big{padding:24px 26px 20px 34px;border-right:1px solid #2C333D}
+.lab{font:600 19px/1 "Saira Condensed";letter-spacing:.14em;color:#8A94A3}
+.num{font:800 128px/1 "Saira Condensed";color:#FF4D4D;margin:8px 0 12px}
+.num small{font:600 40px/1 "Saira Condensed";margin-left:8px;color:#8A94A3}
+.mini{display:flex;gap:26px}.mini b{display:block;font:800 36px/1 "Saira Condensed"}
+.mini span{display:block;font:600 14px/1.2 "Saira Condensed";letter-spacing:.11em;color:#8A94A3;margin-top:5px}
+.list{padding:15px 24px}
+.list div{display:grid;grid-template-columns:54px 118px 1fr;align-items:center;height:37px;font:400 16px/1 "IBM Plex Mono";color:#C5CBD3;white-space:nowrap}
+.list i{font:800 21px/1 "Saira Condensed";font-style:normal;letter-spacing:.06em}
+.list u{text-decoration:none;font:500 14px/1 "IBM Plex Mono";color:#8A94A3}
+.p{color:#3DDC97}.f{color:#FF4D4D}.bad{color:#ECE8E1!important}.dimrow,.dimrow i{color:#6F7885!important}
+pre{margin:0;padding:15px 34px;border-bottom:1px solid #2C333D;font:400 16px/1 "IBM Plex Mono";color:#8A94A3}
+.foot{padding:17px 24px 20px 34px}
+.cells{display:grid;grid-template-columns:repeat(20,1fr);gap:6px;margin-bottom:13px}
+.cells s{display:block;height:22px;background:#2A3039}
+.cells s.p{background:#3DDC97}.cells s.f{background:#FF4D4D}.cells s.u{background:#7B8592}
+.count{display:flex;gap:24px;font:600 19px/1 "Saira Condensed";letter-spacing:.09em;color:#8A94A3}
+.count em{font-style:normal}.pc{color:#3DDC97}.fc{color:#FF4D4D}
+</style>

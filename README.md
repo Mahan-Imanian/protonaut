@@ -12,7 +12,7 @@ Protonaut runs your build under pinned GE-Proton on a headless Linux display in 
 [![CI](https://github.com/Mahan-Imanian/protonaut/actions/workflows/ci.yml/badge.svg)](https://github.com/Mahan-Imanian/protonaut/actions/workflows/ci.yml)
 [![Real games](https://github.com/Mahan-Imanian/protonaut/actions/workflows/real-games.yml/badge.svg)](https://github.com/Mahan-Imanian/protonaut/actions/workflows/real-games.yml)
 [![Latest release](https://img.shields.io/github/v/release/Mahan-Imanian/protonaut?color=FF4F00&label=release)](https://github.com/Mahan-Imanian/protonaut/releases/latest)
-[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0D1524)](LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0B0E13)](LICENSE)
 
 [**Website**](https://mahan-imanian.github.io/protonaut/) ·
 [Quick start](#quick-start) ·
