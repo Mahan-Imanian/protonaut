@@ -49,13 +49,13 @@ fn static_result(id: &str, title: &str, status: Status, summary: impl Into<Strin
 fn check_pe(input: &StaticInput<'_>) -> CheckResult {
     match input.pe {
         Ok(_) => static_result(
-            "SP-PE-001",
+            "PN-PE-001",
             "Executable is a Windows PE file",
             Status::Pass,
             format!("{} parsed as a PE executable.", input.exe),
         ),
         Err(e) => static_result(
-            "SP-PE-001",
+            "PN-PE-001",
             "Executable is a Windows PE file",
             Status::Fail,
             format!("{}: {e}.", input.exe),
@@ -66,21 +66,21 @@ fn check_pe(input: &StaticInput<'_>) -> CheckResult {
 fn check_arch(pe: &PeInfo) -> CheckResult {
     let title = "Executable architecture runs under Proton";
     match pe.arch {
-        PeArch::X64 => static_result("SP-PE-002", title, Status::Pass, "x86-64 executable."),
+        PeArch::X64 => static_result("PN-PE-002", title, Status::Pass, "x86-64 executable."),
         PeArch::X86 => static_result(
-            "SP-PE-002",
+            "PN-PE-002",
             title,
             Status::Pass,
             "32-bit x86 executable; Proton runs it through WoW64.",
         ),
         PeArch::Arm64 => static_result(
-            "SP-PE-002",
+            "PN-PE-002",
             title,
             Status::Fail,
             "ARM64 executable; SteamOS devices are x86-64 and Proton does not run ARM64 Windows binaries.",
         ),
         PeArch::Other => static_result(
-            "SP-PE-002",
+            "PN-PE-002",
             title,
             Status::Fail,
             "Unrecognised machine type.",
@@ -107,14 +107,14 @@ fn check_imports(input: &StaticInput<'_>, pe: &PeInfo) -> CheckResult {
         }
     }
     if !missing.is_empty() {
-        static_result("SP-PE-003", title, Status::Fail, format!("{} imported DLL(s) are neither shipped next to the executable nor provided by the runtime.", missing.len()))
+        static_result("PN-PE-003", title, Status::Fail, format!("{} imported DLL(s) are neither shipped next to the executable nor provided by the runtime.", missing.len()))
             .with_details(missing)
     } else if !unknown.is_empty() {
-        static_result("SP-PE-003", title, Status::Unknown, "No runtime installed to compare against; DLLs not shipped with the build could not be checked.")
+        static_result("PN-PE-003", title, Status::Unknown, "No runtime installed to compare against; DLLs not shipped with the build could not be checked.")
             .with_details(unknown)
     } else {
         static_result(
-            "SP-PE-003",
+            "PN-PE-003",
             title,
             Status::Pass,
             format!(
@@ -142,7 +142,7 @@ fn check_steam_input(pe: &PeInfo) -> CheckResult {
     let imports = steam_imports(pe);
     if imports.is_empty() {
         return static_result(
-            "SP-STEAM-001",
+            "PN-STEAM-001",
             title,
             Status::Unknown,
             "The executable does not import steam_api directly; Steam Input use could not be determined (an engine plugin or another module may load it).",
@@ -155,13 +155,13 @@ fn check_steam_input(pe: &PeInfo) -> CheckResult {
         .collect();
     if hits.is_empty() {
         static_result(
-            "SP-STEAM-001",
+            "PN-STEAM-001",
             title,
             Status::Unknown,
             "steam_api is imported but no Steam Input function is imported by name; C++ interface calls are invisible to this check.",
         )
     } else {
-        static_result("SP-STEAM-001", title, Status::Pass, "The executable imports Steam Input functions; Valve recommends Steam Input for correct controller glyphs.")
+        static_result("PN-STEAM-001", title, Status::Pass, "The executable imports Steam Input functions; Valve recommends Steam Input for correct controller glyphs.")
             .with_details(hits)
     }
 }
@@ -178,14 +178,14 @@ fn check_text_input(pe: &PeInfo) -> CheckResult {
         .collect();
     if hits.is_empty() {
         static_result(
-            "SP-STEAM-002",
+            "PN-STEAM-002",
             title,
             Status::Unknown,
             "No Steamworks text-input function is imported by name. If the game asks for text, it must open the on-screen keyboard or offer controller-only entry.",
         )
     } else {
         static_result(
-            "SP-STEAM-002",
+            "PN-STEAM-002",
             title,
             Status::Pass,
             "The executable imports a Steamworks text-input function.",
@@ -199,7 +199,7 @@ fn check_case_collisions(tree: &BuildTree) -> CheckResult {
     let groups = tree.case_collisions();
     if groups.is_empty() {
         static_result(
-            "SP-FS-001",
+            "PN-FS-001",
             title,
             Status::Pass,
             format!(
@@ -210,7 +210,7 @@ fn check_case_collisions(tree: &BuildTree) -> CheckResult {
         )
     } else {
         let details = groups.iter().map(|g| g.join("  <->  ")).collect();
-        static_result("SP-FS-001", title, Status::Fail, format!("{} group(s) of paths differ only by case; Windows and Wine resolve names case-insensitively, so only one of each group is reachable.", groups.len()))
+        static_result("PN-FS-001", title, Status::Fail, format!("{} group(s) of paths differ only by case; Windows and Wine resolve names case-insensitively, so only one of each group is reachable.", groups.len()))
             .with_details(details)
     }
 }
@@ -259,13 +259,13 @@ fn check_anti_cheat(tree: &BuildTree) -> CheckResult {
     }
     if found.is_empty() {
         static_result(
-            "SP-AC-001",
+            "PN-AC-001",
             title,
             Status::Pass,
             "No known anti-cheat files found.",
         )
     } else {
-        static_result("SP-AC-001", title, Status::Warning, "Anti-cheat files found. Easy Anti-Cheat and BattlEye run under Proton only when the developer enables Proton support with the vendor; most others do not run on Linux. This cannot be verified here.")
+        static_result("PN-AC-001", title, Status::Warning, "Anti-cheat files found. Easy Anti-Cheat and BattlEye run under Proton only when the developer enables Proton support with the vendor; most others do not run on Linux. This cannot be verified here.")
             .with_details(found)
     }
 }
@@ -292,17 +292,17 @@ fn check_launcher(input: &StaticInput<'_>) -> CheckResult {
         .collect();
     let mut r = if exe_name.contains("launcher") {
         static_result(
-            "SP-LAUNCH-001",
+            "PN-LAUNCH-001",
             title,
             Status::Warning,
             "The configured executable looks like a launcher. Valve requires launchers to be fully controller-navigable and recommends not requiring one.",
         )
     } else if !launchers.is_empty() {
-        static_result("SP-LAUNCH-001", title, Status::Warning, "The build contains executables named like launchers. If one runs before the game, it must be fully controller-navigable.")
+        static_result("PN-LAUNCH-001", title, Status::Warning, "The build contains executables named like launchers. If one runs before the game, it must be fully controller-navigable.")
             .with_details(launchers)
     } else {
         static_result(
-            "SP-LAUNCH-001",
+            "PN-LAUNCH-001",
             title,
             Status::Pass,
             "No launcher-like executables found.",
@@ -339,17 +339,17 @@ fn check_media(tree: &BuildTree) -> CheckResult {
     let mut r = if !system.is_empty() {
         let mut details = system.clone();
         details.truncate(20);
-        static_result("SP-MEDIA-001", title, Status::Warning, format!("{} video file(s) in formats often decoded through Windows Media Foundation, which Proton supports only partially. Confirm cutscenes play to the end in a runtime test.", system.len()))
+        static_result("PN-MEDIA-001", title, Status::Warning, format!("{} video file(s) in formats often decoded through Windows Media Foundation, which Proton supports only partially. Confirm cutscenes play to the end in a runtime test.", system.len()))
             .with_details(details)
     } else if in_process > 0 {
         static_result(
-            "SP-MEDIA-001",
+            "PN-MEDIA-001",
             title,
             Status::Pass,
             format!("{in_process} video file(s) in formats usually decoded by in-game middleware."),
         )
     } else {
-        static_result("SP-MEDIA-001", title, Status::Pass, "No video files found.")
+        static_result("PN-MEDIA-001", title, Status::Pass, "No video files found.")
     };
     r.evidence = Evidence::Heuristic;
     r
@@ -412,13 +412,13 @@ mod tests {
         );
         let r = run(&t, &p, &ctx(&["kernel32.dll"]));
         for id in [
-            "SP-PE-001",
-            "SP-PE-002",
-            "SP-PE-003",
-            "SP-FS-001",
-            "SP-AC-001",
-            "SP-LAUNCH-001",
-            "SP-MEDIA-001",
+            "PN-PE-001",
+            "PN-PE-002",
+            "PN-PE-003",
+            "PN-FS-001",
+            "PN-AC-001",
+            "PN-LAUNCH-001",
+            "PN-MEDIA-001",
         ] {
             assert_eq!(get(&r, id).status, Status::Pass, "{id}");
         }
@@ -435,7 +435,7 @@ mod tests {
             &pe(PeArch::X64, &[("fx_absent.dll", &["f"])]),
             &ctx(&["kernel32.dll"]),
         );
-        let c = get(&r, "SP-PE-003");
+        let c = get(&r, "PN-PE-003");
         assert_eq!(c.status, Status::Fail);
         assert_eq!(c.details, vec!["fx_absent.dll"]);
     }
@@ -447,7 +447,7 @@ mod tests {
             &pe(PeArch::X64, &[("d3d11.dll", &["D3D11CreateDevice"])]),
             &StaticContext::default(),
         );
-        assert_eq!(get(&r, "SP-PE-003").status, Status::Unknown);
+        assert_eq!(get(&r, "PN-PE-003").status, Status::Unknown);
     }
 
     #[test]
@@ -460,7 +460,7 @@ mod tests {
             ),
             &ctx(&["kernel32.dll"]),
         );
-        assert_eq!(get(&r, "SP-PE-003").status, Status::Pass);
+        assert_eq!(get(&r, "PN-PE-003").status, Status::Pass);
     }
 
     #[test]
@@ -471,18 +471,18 @@ mod tests {
             &pe(PeArch::X64, &[("engine.dll", &["x"])]),
             &ctx(&["kernel32.dll"]),
         );
-        assert_eq!(get(&r, "SP-PE-003").status, Status::Fail);
+        assert_eq!(get(&r, "PN-PE-003").status, Status::Fail);
     }
 
     #[test]
     fn arm64_fails_x86_passes() {
         let t = tree(&["Game.exe"]);
         assert_eq!(
-            get(&run(&t, &pe(PeArch::Arm64, &[]), &ctx(&[])), "SP-PE-002").status,
+            get(&run(&t, &pe(PeArch::Arm64, &[]), &ctx(&[])), "PN-PE-002").status,
             Status::Fail
         );
         assert_eq!(
-            get(&run(&t, &pe(PeArch::X86, &[]), &ctx(&[])), "SP-PE-002").status,
+            get(&run(&t, &pe(PeArch::X86, &[]), &ctx(&[])), "PN-PE-002").status,
             Status::Pass
         );
     }
@@ -494,8 +494,8 @@ mod tests {
             &Err(PeError::NotPe("Elf".into())),
             &ctx(&[]),
         );
-        assert_eq!(get(&r, "SP-PE-001").status, Status::Fail);
-        assert!(r.iter().all(|c| c.id != "SP-PE-002" && c.id != "SP-PE-003"));
+        assert_eq!(get(&r, "PN-PE-001").status, Status::Fail);
+        assert!(r.iter().all(|c| c.id != "PN-PE-002" && c.id != "PN-PE-003"));
     }
 
     #[test]
@@ -505,7 +505,7 @@ mod tests {
             &pe(PeArch::X64, &[]),
             &ctx(&[]),
         );
-        let c = get(&r, "SP-AC-001");
+        let c = get(&r, "PN-AC-001");
         assert_eq!(c.status, Status::Warning);
         assert!(c.details[0].starts_with("Easy Anti-Cheat"));
     }
@@ -517,7 +517,7 @@ mod tests {
             &pe(PeArch::X64, &[]),
             &ctx(&[]),
         );
-        assert_eq!(get(&r, "SP-AC-001").status, Status::Pass);
+        assert_eq!(get(&r, "PN-AC-001").status, Status::Pass);
     }
 
     #[test]
@@ -527,7 +527,7 @@ mod tests {
             &pe(PeArch::X64, &[]),
             &ctx(&[]),
         );
-        assert_eq!(get(&r, "SP-FS-001").status, Status::Fail);
+        assert_eq!(get(&r, "PN-FS-001").status, Status::Fail);
     }
 
     #[test]
@@ -537,7 +537,7 @@ mod tests {
             &pe(PeArch::X64, &[]),
             &ctx(&[]),
         );
-        for id in ["SP-LAUNCH-001", "SP-MEDIA-001"] {
+        for id in ["PN-LAUNCH-001", "PN-MEDIA-001"] {
             assert_eq!(get(&r, id).status, Status::Warning, "{id}");
             assert_eq!(get(&r, id).evidence, Evidence::Heuristic, "{id}");
         }
@@ -550,13 +550,13 @@ mod tests {
             &pe(PeArch::X64, &[]),
             &ctx(&[]),
         );
-        assert_eq!(get(&r, "SP-MEDIA-001").status, Status::Pass);
+        assert_eq!(get(&r, "PN-MEDIA-001").status, Status::Pass);
     }
 
     #[test]
     fn steam_input_detection_is_unknown_unless_seen() {
         let none = run(&tree(&["Game.exe"]), &pe(PeArch::X64, &[]), &ctx(&[]));
-        assert_eq!(get(&none, "SP-STEAM-001").status, Status::Unknown);
+        assert_eq!(get(&none, "PN-STEAM-001").status, Status::Unknown);
         let iface = run(
             &tree(&["Game.exe"]),
             &pe(
@@ -568,7 +568,7 @@ mod tests {
             ),
             &ctx(&[]),
         );
-        assert_eq!(get(&iface, "SP-STEAM-001").status, Status::Unknown);
+        assert_eq!(get(&iface, "PN-STEAM-001").status, Status::Unknown);
         let flat = run(
             &tree(&["Game.exe"]),
             &pe(
@@ -583,7 +583,7 @@ mod tests {
             ),
             &ctx(&[]),
         );
-        assert_eq!(get(&flat, "SP-STEAM-001").status, Status::Pass);
-        assert_eq!(get(&flat, "SP-STEAM-002").status, Status::Pass);
+        assert_eq!(get(&flat, "PN-STEAM-001").status, Status::Pass);
+        assert_eq!(get(&flat, "PN-STEAM-002").status, Status::Pass);
     }
 }

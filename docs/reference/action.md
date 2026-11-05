@@ -1,7 +1,7 @@
 # GitHub Action
 
 ```yaml
-- uses: Mahan-Imanian/steamos-preflight@v0.1.1
+- uses: Mahan-Imanian/protonaut@v0
   with:
     build: dist/Windows
     exe: MyGame.exe
@@ -20,7 +20,7 @@ Runs on `ubuntu-24.04` (x86-64 Linux runners only).
 | `resolution` | `1280x800` | `1280x800`, `1280x720` or `1920x1080` |
 | `fail-on` | `fail` | `warning` also fails the step on WARNING |
 | `network` | `off` | `on` lets the game use the network |
-| `artifact-name` | `steamos-preflight-results` | Results artifact name; empty skips the upload |
+| `artifact-name` | `protonaut-results` | Results artifact name; empty skips the upload |
 | `fail-job` | `true` | `false` never fails the step on compatibility failures, so the outputs below stay available |
 
 ## Outputs
@@ -28,7 +28,7 @@ Runs on `ubuntu-24.04` (x86-64 Linux runners only).
 | Output | Meaning |
 |---|---|
 | `verdict` | `pass`, `fail`, or `error` when the test could not run |
-| `exit-code` | `steamos-preflight test` exit code (see [cli.md](cli.md)) |
+| `exit-code` | `protonaut test` exit code (see [cli.md](cli.md)) |
 | `results` | Absolute path of this invocation's results directory (unique per use, so several uses in one job do not overwrite each other) |
 
 The step fails when the verdict is `fail` or the test could not run. GitHub
@@ -61,7 +61,7 @@ downloads only `report.json`:
 
 ```yaml
 jobs:
-  preflight:
+  protonaut:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -70,8 +70,8 @@ jobs:
         with:
           persist-credentials: false
       - run: ./build-windows.sh            # your build
-      - id: preflight
-        uses: Mahan-Imanian/steamos-preflight@v0.1.1
+      - id: protonaut
+        uses: Mahan-Imanian/protonaut@v0
         with:
           fail-job: "false"
           build: dist/Windows
@@ -79,13 +79,13 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
-          name: preflight-report
-          path: ${{ steps.preflight.outputs.results }}/report.json
-      - if: steps.preflight.outputs.verdict != 'pass'
+          name: protonaut-report
+          path: ${{ steps.protonaut.outputs.results }}/report.json
+      - if: steps.protonaut.outputs.verdict != 'pass'
         run: exit 1
 
   comment:
-    needs: preflight
+    needs: protonaut
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     permissions:
@@ -94,8 +94,8 @@ jobs:
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: preflight-report
-      - uses: Mahan-Imanian/steamos-preflight/comment@v0.1.1
+          name: protonaut-report
+      - uses: Mahan-Imanian/protonaut/comment@v0
         with:
           report: report.json
           pr-number: ${{ github.event.pull_request.number }}
@@ -111,17 +111,16 @@ A complete workflow is in [examples/github-actions.yml](../examples/github-actio
 
 ## Pinning
 
-`@v0.1.1` installs the release binary. Before running it, the action checks
-it against the release's `SHA256SUMS` and verifies its GitHub build
-provenance attestation: it must have been built by this repository's
-`release.yml` workflow from the `refs/tags/v0.1.1` ref on a GitHub-hosted
-runner. Any mismatch stops the job.
+`@v0` follows the latest 0.x release, and `@v0.2.0` pins one version. Both install the
+release binary. Before running it, the action checks it against the release's
+`SHA256SUMS` and verifies its GitHub build provenance attestation: it must have
+been built by this repository's `release.yml` workflow from the matching
+`refs/tags/vX.Y.Z` ref on a GitHub-hosted runner. Any mismatch stops the job.
 
-Tags can be moved. For an immutable pin, use the full commit SHA that
-`v0.1.1` points to. With any ref other than a `vX.Y.Z` tag, including a commit
-SHA, the action builds the CLI from source with `cargo build --locked`, which
-adds about three minutes to the first use in a job. There is no `v0` major
-tag yet; one will follow the 1.0 stability commitment.
+Tags can be moved. For an immutable pin, use a full commit SHA. With a commit
+SHA or a branch, the action builds the CLI from source with
+`cargo build --locked`, which adds about three minutes to the first use in a job.
+
 
 ## Cost
 

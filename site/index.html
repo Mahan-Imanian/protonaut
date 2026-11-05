@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Protonaut: test Windows game builds on Proton in CI</title>
+<meta name="description" content="Protonaut is an open-source GitHub Action and CLI that runs your Windows game build under GE-Proton on every pull request and catches crashes, black screens and letterboxing without a Steam Deck.">
+<link rel="canonical" href="https://mahan-imanian.github.io/protonaut/">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Protonaut: go / no-go for your Windows game build on Proton">
+<meta property="og:description" content="Run your build under GE-Proton on every pull request. Crashes, black screens and letterboxing turn the PR red, with screenshots and logs.">
+<meta property="og:url" content="https://mahan-imanian.github.io/protonaut/">
+<meta property="og:image" content="https://mahan-imanian.github.io/protonaut/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Protonaut","applicationCategory":"DeveloperApplication","operatingSystem":"Linux","license":"https://spdx.org/licenses/MIT.html","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://mahan-imanian.github.io/protonaut/","codeRepository":"https://github.com/Mahan-Imanian/protonaut","description":"GitHub Action and CLI that tests Windows game builds under GE-Proton in CI."}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"Can I test Steam Deck compatibility in CI without a Steam Deck?","acceptedAnswer":{"@type":"Answer","text":"Partly. Protonaut runs your Windows build under GE-Proton on a GitHub runner and catches crashes, black screens, letterboxing and error dialogs. Frame rate, controller feel and suspend still need a device."}},
+{"@type":"Question","name":"Will a pass get my game Steam Deck Verified?","acceptedAnswer":{"@type":"Answer","text":"No. Valve decides that rating. A Protonaut pass cannot predict it, and Protonaut reports hardware criteria as NOT_TESTED."}},
+{"@type":"Question","name":"Is this Valve's Proton?","acceptedAnswer":{"@type":"Answer","text":"No. Protonaut uses GE-Proton, a community build, because Valve's builds need a Steam login. A game can behave differently under Valve's Proton."}}
+]}
+</script>
+<style>
+@font-face{font-family:"Saira Condensed";font-weight:800;font-display:swap;src:url(assets/fonts/saira-condensed-latin-800-normal.woff2)}
+@font-face{font-family:"Saira Condensed";font-weight:600;font-display:swap;src:url(assets/fonts/saira-condensed-latin-600-normal.woff2)}
+@font-face{font-family:"IBM Plex Mono";font-weight:400;font-display:swap;src:url(assets/fonts/ibm-plex-mono-latin-400-normal.woff2)}
+@font-face{font-family:"IBM Plex Mono";font-weight:500;font-display:swap;src:url(assets/fonts/ibm-plex-mono-latin-500-normal.woff2)}
+:root{--ink:#0D1524;--panel:#131D30;--line:#26334D;--bone:#F3ECDD;--mute:#A7B3C7;--orange:#FF4F00;--go:#39D98A;--nogo:#FF5C5C;--warn:#F2C14E}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--bone);font:400 17px/1.6 "IBM Plex Mono",ui-monospace,monospace;overflow-x:hidden}
+.bg{position:fixed;inset:0;z-index:-1;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:64px 64px;opacity:.28;animation:drift 40s linear infinite}
+@keyframes drift{to{background-position:64px 64px}}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+nav{display:flex;align-items:center;justify-content:space-between;padding:20px 0;gap:16px}
+.brand{font:800 26px/1 "Saira Condensed";letter-spacing:.06em;color:var(--bone);text-decoration:none}
+nav div{display:flex;gap:22px;flex-wrap:wrap}
+nav div a{color:var(--mute);text-decoration:none;font-size:14px;transition:color .15s}
+nav div a:hover{color:var(--orange)}
+h1,h2,h3{font-family:"Saira Condensed",sans-serif;line-height:1.02;margin:0}
+.hero{display:grid;grid-template-columns:1.05fr 1fr;gap:56px;align-items:center;padding:56px 0 72px}
+.hero h1{font-weight:800;font-size:clamp(48px,7.2vw,92px);letter-spacing:.005em}
+.hero h1 em{font-style:normal;color:var(--orange)}
+.lead{color:var(--mute);margin:24px 0 30px;max-width:560px}
+.cta{display:inline-flex;align-items:center;gap:12px;background:var(--orange);color:#0D1524;font:800 21px/1 "Saira Condensed";letter-spacing:.04em;padding:16px 26px;text-decoration:none;transition:transform .15s,background .15s}
+.cta:hover{background:var(--bone);transform:translateX(5px)}
+.cta2{margin-left:18px;color:var(--bone);font-size:15px}
+.board{border:1px solid var(--line);background:var(--panel)}
+.bar{display:flex;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:13px;color:var(--mute)}
+.rows{padding:12px 16px;min-height:262px;font-size:14px}
+.row{display:grid;grid-template-columns:50px 1fr;gap:10px;padding:5px 0;opacity:0;transform:translateX(-14px);animation:in .35s forwards}
+@keyframes in{to{opacity:1;transform:none}}
+.s-pass{color:var(--go)}.s-fail{color:var(--nogo)}.s-nt{color:var(--mute)}
+.call{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding:14px 16px;font:800 34px/1 "Saira Condensed";letter-spacing:.05em;min-height:66px;transition:background .3s,color .3s}
+.call.nogo{background:var(--nogo);color:#0D1524}.call.go{background:var(--go);color:#0D1524}
+.call small{font:400 12px/1.3 "IBM Plex Mono";letter-spacing:0;text-align:right}
+.patch{position:fixed;right:-150px;bottom:-150px;width:480px;opacity:.06;z-index:-1;animation:spin 90s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+section{padding:64px 0;border-top:1px solid var(--line)}
+h2{font-weight:800;font-size:clamp(36px,5vw,58px);margin-bottom:24px}
+pre{background:var(--panel);border:1px solid var(--line);padding:18px;overflow-x:auto;margin:0;font-size:14.5px;line-height:1.6}
+.copy{position:relative}
+.copy button{position:absolute;top:10px;right:10px;background:var(--ink);color:var(--bone);border:1px solid var(--line);font:500 12px "IBM Plex Mono";padding:6px 11px;cursor:pointer;transition:border-color .15s,color .15s}
+.copy button:hover{border-color:var(--orange);color:var(--orange)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:28px}.two>*{min-width:0}
+.catch{display:grid;grid-template-columns:repeat(2,1fr);border-top:1px solid var(--line);border-left:1px solid var(--line)}
+.catch div{padding:22px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);transition:background .2s}
+.catch div:hover{background:var(--panel)}
+.catch h3{font-weight:600;font-size:27px;margin-bottom:8px;color:var(--orange)}
+.catch p{margin:0;color:var(--mute);font-size:15px}
+ol.t{list-style:none;padding:0;margin:0;counter-reset:s 5}
+ol.t li{counter-increment:s -1;display:grid;grid-template-columns:70px 1fr;padding:18px 0;border-bottom:1px solid var(--line)}
+ol.t li:before{content:"T-" counter(s);font:800 30px/1 "Saira Condensed";color:var(--orange)}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line)}
+th{font:600 20px "Saira Condensed"}
+.y{color:var(--go)}.n{color:var(--nogo)}
+.scroll{overflow-x:auto}
+details{border-bottom:1px solid var(--line);padding:16px 0}
+summary{cursor:pointer;font:600 24px/1.2 "Saira Condensed"}
+summary:hover{color:var(--orange)}
+details p{color:var(--mute);margin:10px 0 0}
+a{color:var(--orange)}
+.limits{color:var(--mute);padding-left:20px}.limits li{margin:8px 0}
+footer{padding:34px 0;border-top:1px solid var(--line);color:var(--mute);font-size:13px}
+.r{opacity:0;transform:translateY(22px);transition:opacity .6s,transform .6s}.r.on{opacity:1;transform:none}
+@media (max-width:860px){.hero,.two{grid-template-columns:1fr}.catch{grid-template-columns:1fr}.hero{padding-top:24px;gap:36px}nav div{gap:14px}.cta2{display:block;margin:16px 0 0}}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<img class="patch" src="assets/patch.png" alt="">
+<div class="wrap">
+<nav><a class="brand" href="#">PROTONAUT</a><div><a href="#start">Quick start</a><a href="#catches">What it catches</a><a href="#faq">FAQ</a><a href="https://github.com/Mahan-Imanian/protonaut">GitHub</a></div></nav>
+<header class="hero">
+<div>
+<h1>Go / no-go for your Windows build <em>on Proton.</em></h1>
+<p class="lead">Protonaut is a GitHub Action and CLI that runs your game under pinned GE-Proton on every pull request. When a change makes it crash or render black, the PR goes red, with screenshots and logs. You don't need a Steam Deck.</p>
+<a class="cta" href="#start">Add it to your CI &raquo;</a><a class="cta2" href="https://github.com/Mahan-Imanian/protonaut">View on GitHub</a>
+</div>
+<div class="board" aria-label="Example results from the crash test build">
+<div class="bar"><span>protonaut test dist/Windows</span><span>crash fixture, example</span></div>
+<div class="rows" id="rows"></div>
+<div class="call" id="call"><span>HOLD</span></div>
+</div>
+</header>
+
+<section id="start" class="r"><h2>One step in your workflow</h2>
+<div class="two">
+<div class="copy"><button data-c="a">Copy</button><pre id="a">- uses: Mahan-Imanian/protonaut@v0
+  with:
+    build: dist/Windows
+    exe: MyGame.exe</pre><p style="color:var(--mute)">Runs on <code>ubuntu-24.04</code>. The step fails on any FAIL, writes the report to the job summary and uploads screenshots and logs. Workflows for Godot, Unity and Unreal are in the <a href="https://github.com/Mahan-Imanian/protonaut/blob/main/docs/recipes.md">recipes</a>.</p></div>
+<div class="copy"><button data-c="b">Copy</button><pre id="b">curl -fsSL https://raw.githubusercontent.com/Mahan-Imanian/protonaut/main/install.sh | sh -s -- --with-deps
+sudo protonaut setup
+protonaut test dist/Windows --exe MyGame.exe --install</pre><p style="color:var(--mute)">Or run the CLI on your own Ubuntu 24.04 machine. On your machine the game runs as your user, so only run builds you trust.</p></div>
+</div></section>
+
+<section id="catches" class="r"><h2>What it catches</h2>
+<div class="catch">
+<div><h3>Launch and stability</h3><p>Crashes, exits with an error, missing DLLs, a game that never opens a window.</p></div>
+<div><h3>Rendering</h3><p>Black or empty frames, letterboxing at 1280x800, extra "unsupported hardware" windows, error text inside the game window.</p></div>
+<div><h3>The build itself</h3><p>32/64-bit and ARM64 executables, DLL imports nothing provides, files that differ only by case, anti-cheat files, launchers, Media Foundation video.</p></div>
+<div><h3>Steamworks hints</h3><p>Whether the Steam Input and on-screen keyboard APIs are imported.</p></div>
+</div>
+<p style="color:var(--mute)">Missing evidence is never reported as a pass. If a screenshot can't be captured, the check says <code>NOT_TESTED</code>. CI also runs OpenTTD 15.3, a Godot 4.7.2 3D game and Chocolate Doom 3.0.1 through the action. <a href="https://github.com/Mahan-Imanian/protonaut/blob/main/docs/compatibility/real-games.md">See the results.</a></p>
+</section>
+
+<section class="r"><h2>Countdown</h2>
+<ol class="t" reversed>
+<li>Your build runs under a pinned, checksum-verified GE-Proton release with Mesa's software Vulkan driver on a headless display at 1280x800.</li>
+<li>A control program that draws a known colour runs first. If its frame can't be captured, screenshot checks report NOT_TESTED, not a false black screen.</li>
+<li>Your game runs as an unprivileged user with no network and no CI token. Protonaut records windows, screenshots and the Wine log, then stops every process.</li>
+<li>Rules turn the evidence into report.json, an HTML report, JUnit XML and a PR comment.</li>
+</ol></section>
+
+<section class="r"><h2>Where it fits</h2><div class="scroll"><table>
+<tr><th></th><th>Protonaut</th><th>Valve's review</th><th>A Deck on your desk</th></tr>
+<tr><td>Runs</td><td>Every pull request</td><td>After you submit a build</td><td>When someone has time</td></tr>
+<tr><td>Crashes and black screens</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+<tr><td>Frame rate and controller feel</td><td class="n">No</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+<tr><td>Verified rating</td><td class="n">No</td><td class="y">Yes</td><td class="n">No</td></tr>
+</table></div></section>
+
+<section class="r"><h2>What it can't do</h2><ul class="limits">
+<li>GE-Proton is not Valve's Proton, so a game can behave differently on a real Deck.</li>
+<li>No real game proven to render through DXVK (Direct3D 9-11) is in the suite yet.</li>
+<li>Rendering uses Mesa lavapipe on the CPU, so there are no performance numbers.</li>
+<li>There is no Steam client, so games that require the Steam API to initialise can't be tested.</li>
+<li>No controller, touch, suspend or battery testing.</li>
+</ul></section>
+
+<section id="faq" class="r"><h2>FAQ</h2>
+<details><summary>Can I test Steam Deck compatibility in CI without a Steam Deck?</summary><p>Partly. Protonaut runs your Windows build under GE-Proton on a GitHub runner and catches crashes, black screens, letterboxing and error dialogs. Frame rate, controller feel and suspend still need a device.</p></details>
+<details><summary>Will a pass get my game Steam Deck Verified?</summary><p>No. Valve decides that rating. A Protonaut pass cannot predict it, and Protonaut reports hardware criteria as NOT_TESTED.</p></details>
+<details><summary>Is this Valve's Proton?</summary><p>No. Protonaut uses GE-Proton, a community build, because Valve's builds need a Steam login. A game can behave differently under Valve's Proton.</p></details>
+</section>
+
+<footer>Protonaut is an independent community project, not affiliated with or endorsed by Valve. Proton and Steam Deck are trademarks of Valve Corporation. Licensed under MIT or Apache-2.0.</footer>
+</div>
+<script>
+var checks=[["PASS","PN-PE-003 Imported DLLs are available","pass"],["PASS","PN-RUN-001 Game process starts under Proton","pass"],["FAIL","PN-RUN-002 Crashed after 4.1 s","fail"],["FAIL","PN-RUN-003 1 crash signature in the Wine log","fail"],["N/T","PN-HW-001 Frame rate needs real hardware","nt"]];
+var rows=document.getElementById("rows"),call=document.getElementById("call");
+function run(){rows.innerHTML="";call.className="call";call.innerHTML="<span>HOLD</span><small>running checks</small>";
+checks.forEach(function(c,i){setTimeout(function(){var d=document.createElement("div");d.className="row";d.innerHTML='<b class="s-'+c[2]+'">'+c[0]+"</b><span>"+c[1]+"</span>";rows.appendChild(d)},500+i*750)});
+setTimeout(function(){call.className="call nogo";call.innerHTML="<span>NO-GO</span><small>PR goes red</small>"},500+checks.length*750);
+setTimeout(run,500+checks.length*750+4200)}
+run();
+document.querySelectorAll(".copy button").forEach(function(b){b.onclick=function(){navigator.clipboard.writeText(document.getElementById(b.dataset.c).textContent);b.textContent="Copied";setTimeout(function(){b.textContent="Copy"},1400)}});
+var o=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting)x.target.classList.add("on")})},{threshold:.12});document.querySelectorAll(".r").forEach(function(x){o.observe(x)});
+</script>
+</body>
+</html>

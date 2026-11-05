@@ -1,233 +1,141 @@
-# SteamOS Preflight
+<div align="center">
 
-**Test your Windows game build under Proton in CI, on every pull request,
-without a Steam Deck.**
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/wordmark-dark.png">
+  <img alt="Protonaut" src="docs/assets/wordmark-light.png" width="480">
+</picture>
 
-SteamOS Preflight is for developers who ship a Windows build on Steam and
-want to know when a change breaks it on SteamOS. Valve's compatibility
-review only happens after you submit a build and takes about a week, and it
-is repeated after Proton updates; until now, catching a regression earlier
-meant testing by hand on Linux or a Deck. SteamOS Preflight runs your build
-under pinned Proton releases on an ordinary GitHub runner, watches it start,
-render and keep running, and reports what broke with screenshots and logs.
+**Go / no-go for your Windows game build on Proton, on every pull request.**
 
-Questions and bug reports: [open an issue](https://github.com/Mahan-Imanian/steamos-preflight/issues/new/choose).
-Security problems: see [SECURITY.md](SECURITY.md).
+Protonaut runs your build under pinned GE-Proton on a headless Linux display in CI. When a change makes it crash, render black or open the wrong window, the PR goes red with screenshots and logs. You don't need a Steam Deck.
+
+[![CI](https://github.com/Mahan-Imanian/protonaut/actions/workflows/ci.yml/badge.svg)](https://github.com/Mahan-Imanian/protonaut/actions/workflows/ci.yml)
+[![Real games](https://github.com/Mahan-Imanian/protonaut/actions/workflows/real-games.yml/badge.svg)](https://github.com/Mahan-Imanian/protonaut/actions/workflows/real-games.yml)
+[![Latest release](https://img.shields.io/github/v/release/Mahan-Imanian/protonaut?color=FF4F00&label=release)](https://github.com/Mahan-Imanian/protonaut/releases/latest)
+[![License: MIT or Apache-2.0](https://img.shields.io/badge/license-MIT%20or%20Apache--2.0-0D1524)](#license)
+
+[**Website**](https://mahan-imanian.github.io/protonaut/) ·
+[Quick start](#quick-start) ·
+[Recipes](docs/recipes.md) ·
+[All checks](docs/reference/checks.md) ·
+[Changelog](CHANGELOG.md)
+
+<img src="docs/assets/demo.gif" alt="A terminal running protonaut test on a build that crashes under Proton: the checks scroll past and the run ends with failures" width="860">
+
+</div>
+
+> Independent community project, **not affiliated with Valve**. A pass cannot predict a Steam Deck Verified rating, and software rendering does not test GPU performance or how the game feels on a controller.
 
 ## Quick start
 
-In a GitHub workflow on `ubuntu-24.04`, after your build step:
+Add one step to a GitHub workflow on `ubuntu-24.04`, after your build:
 
 ```yaml
-- uses: Mahan-Imanian/steamos-preflight@v0.1.1
+- uses: Mahan-Imanian/protonaut@v0
   with:
     build: dist/Windows
     exe: MyGame.exe
 ```
 
-Or on your own Ubuntu 24.04 machine, after installing the system packages
-listed in [Run it locally](#run-it-locally):
+The step fails on any `FAIL`, writes the report to the job summary, and uploads screenshots and logs as an artifact. Using Godot, Unity or Unreal? Copy a workflow from the [recipes](docs/recipes.md).
 
-Install the release binary (built on Ubuntu 22.04, needs glibc 2.35 or
-newer) after checking its checksum and build provenance:
+To run it on your own Ubuntu 24.04 machine:
 
 ```bash
-curl -fLO https://github.com/Mahan-Imanian/steamos-preflight/releases/download/v0.1.1/steamos-preflight-x86_64-unknown-linux-gnu
-curl -fLO https://github.com/Mahan-Imanian/steamos-preflight/releases/download/v0.1.1/SHA256SUMS
-sha256sum -c --ignore-missing SHA256SUMS
-gh attestation verify steamos-preflight-x86_64-unknown-linux-gnu --repo Mahan-Imanian/steamos-preflight
-sudo install -m 0755 steamos-preflight-x86_64-unknown-linux-gnu /usr/local/bin/steamos-preflight
+curl -fsSL https://raw.githubusercontent.com/Mahan-Imanian/protonaut/main/install.sh | sh -s -- --with-deps
+sudo protonaut setup
+protonaut test dist/Windows --exe MyGame.exe --install
 ```
 
-or build it from source:
+## Why it exists
 
-```bash
-cargo install --locked --git https://github.com/Mahan-Imanian/steamos-preflight --tag v0.1.1 steamos-preflight
-```
+Valve's compatibility review happens after you submit a build. It takes about a week and repeats after Proton updates. Until now, catching a regression earlier meant testing by hand on Linux or a Deck.
 
-```bash
-steamos-preflight test dist/Windows --exe MyGame.exe --install
-```
+| | Protonaut | Valve's review | Testing on a Deck |
+|---|---|---|---|
+| Runs on | Every pull request | After you submit a build | When someone has time |
+| Needs hardware | No, a GitHub runner | No | Yes |
+| Catches crashes and black screens | Yes | Yes | Yes |
+| Tests frame rate and controller feel | No | Yes | Yes |
+| Gives you a Verified rating | No | Yes | No |
 
-```text
-FAIL       SP-RUN-002     Game keeps running during the observation window [ge-proton11-12] — Crashed after 4.1 s.
-Failures found: 10 pass, 2 fail, 0 warning, 2 unknown, 5 not tested. Report: preflight-results/report.html
-```
+Protonaut narrows what reaches a person. It does not replace the review or a device.
 
-> Independent community project, **not affiliated with Valve**. It cannot
-> predict a Steam Deck Verified rating, and software rendering does not test
-> GPU performance or how the game feels on a controller.
+## What it catches
 
-## What it finds
+<img src="docs/assets/pr-comment.png" alt="A pull request comment from Protonaut listing a failed crash check on a real test build" width="860">
 
 | | Examples |
 |---|---|
 | **Launch and stability** | crashes (unhandled exceptions), exits with an error, missing DLLs, a game that never opens a window |
-| **Rendering** | black or empty frames, letterboxing at 1280x800, extra "unsupported hardware" style windows |
+| **Rendering** | black or empty frames, letterboxing at 1280x800, extra "unsupported hardware" style windows, error text inside the game window (read with OCR) |
 | **The build itself** | 32/64-bit and ARM64 executables, DLL imports nothing provides, files that differ only by case, anti-cheat files, launchers, Media Foundation video |
 | **Steamworks hints** | whether the Steam Input and on-screen keyboard APIs are imported |
 
-Each result is `PASS`, `FAIL`, `WARNING`, `UNKNOWN` or `NOT_TESTED`, and
-says whether it was observed, read from the files, or guessed by a
-heuristic. Missing evidence is never reported as a pass. The full list is in
-[docs/reference/checks.md](docs/reference/checks.md).
+Each result is `PASS`, `FAIL`, `WARNING`, `UNKNOWN` or `NOT_TESTED`, and says whether it was observed, read from the files, or guessed by a heuristic. Missing evidence is never reported as a pass.
 
-**What it cannot tell you:** frame rate on real hardware, real GPU driver
-behaviour, controller feel, touch input, suspend and resume, battery use,
-and anything that needs the Steam client. Those still need a device.
+**What it cannot tell you:** frame rate on real hardware, real GPU driver behaviour, controller feel, touch input, suspend and resume, battery use, and anything that needs the Steam client. Those still need a device.
 
-![HTML report from a real run: a letterboxed frame flagged as a warning, with the captured screenshot](docs/images/report.png)
+## Proven on real games
 
-*`report.html` from the letterbox fixture under two runtimes. GE-Proton10-34
-shows "Capture: not working", so its screenshot checks are `NOT_TESTED`.*
+Besides synthetic fixtures, CI runs open-source games through the action:
+
+- OpenTTD 15.3 (OpenGL)
+- A Godot 4.7.2 3D game exported for Vulkan and for Direct3D 12
+- Chocolate Doom 3.0.1 (32-bit, SDL2) with Freedoom
+
+Results and screenshots are in [real-games.md](docs/compatibility/real-games.md). The testing also found a useful failure: OpenTTD without its graphics set keeps running while it shows a fatal error inside its own window. `PN-DISP-005` now reads the screen with OCR and reports text like that as a warning.
+
+![Protonaut's HTML report showing a letterboxed frame flagged as a warning, with the captured screenshot](docs/images/report.png)
 
 ## How it works
 
-1. Your build runs under a pinned, checksum-verified
-   [GE-Proton](https://github.com/GloriousEggroll/proton-ge-custom) release
-   with Mesa's software Vulkan driver on a headless Xorg display at
-   1280x800, 60 Hz. GE-Proton is a community build, not Valve's Proton;
-   Valve's builds need a Steam login and are not supported
-   ([why](docs/compatibility/runtimes.md#verified-runtimes)).
-2. Before your game, a control program that draws a known colour runs under
-   the same runtime. If its frame cannot be captured, screenshot checks are
-   reported as `NOT_TESTED` rather than as a false "black screen".
-3. Your game runs for `observe-secs` as an unprivileged user with no
-   network and no CI token; windows, screenshots and the Wine log are
-   recorded; every process is stopped afterwards.
-4. Rules turn that evidence into results: `report.json` (versioned schema),
-   an HTML report, JUnit XML, and a PR comment.
+1. Your build runs under a pinned, checksum-verified [GE-Proton](https://github.com/GloriousEggroll/proton-ge-custom) release with Mesa's software Vulkan driver on a headless Xorg display at 1280x800, 60 Hz.
+2. A control program that draws a known colour runs first under the same runtime. If its frame cannot be captured, screenshot checks report `NOT_TESTED` instead of a false black screen.
+3. Your game runs for `observe-secs` as an unprivileged user with no network and no CI token. Protonaut records windows, screenshots and the Wine log, then stops every process.
+4. Rules turn that evidence into `report.json` (versioned schema), an HTML report, JUnit XML and a PR comment.
 
 More in [docs/architecture.md](docs/architecture.md).
 
-## Use it in GitHub Actions
-
-```yaml
-jobs:
-  preflight:
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - run: ./build-windows.sh # your build step
-      - uses: Mahan-Imanian/steamos-preflight@v0.1.1
-        with:
-          build: dist/Windows
-          exe: MyGame.exe
-          runtimes: stable    # or several: "ge-proton11-12 ge-proton10-34"
-          observe-secs: "20"
-```
-
-The step fails on any `FAIL`, writes the report to the job summary, and
-uploads screenshots and logs as an artifact. For PR comments, add the
-`comment` action in a second job that never runs the build:
-[docs/reference/action.md](docs/reference/action.md) has inputs, outputs, the
-comment setup and a [complete example workflow](docs/examples/github-actions.yml).
-
-## Run it locally
-
-On Ubuntu 24.04 (or a similar x86-64 Linux):
-
-```bash
-sudo dpkg --add-architecture i386 && sudo apt-get update
-sudo apt-get install --no-install-recommends xserver-xorg-core xserver-xorg-video-dummy x11-xserver-utils x11-utils imagemagick mesa-vulkan-drivers python3 curl tesseract-ocr tesseract-ocr-eng libc6:i386 libx11-6:i386 libxext6:i386 libxrandr2:i386 libxi6:i386 libxcursor1:i386 libxinerama1:i386 libxcomposite1:i386 libxrender1:i386 libxfixes3:i386 libfreetype6:i386 libfontconfig1:i386 libvulkan1:i386 mesa-vulkan-drivers:i386 libgl1:i386 libgl1-mesa-dri:i386
-```
-
-```bash
-cargo install --locked --git https://github.com/Mahan-Imanian/steamos-preflight steamos-preflight
-```
-
-```bash
-sudo steamos-preflight setup
-```
-
-```bash
-steamos-preflight proton install stable
-```
-
-```bash
-steamos-preflight test dist/Windows --exe MyGame.exe
-```
-
-`steamos-preflight diagnose` explains anything missing. `steamos-preflight
-inspect dist/Windows --exe MyGame.exe` runs only the checks that read the
-files, in about a second, without Proton. Results land in
-`preflight-results/` (open `report.html`). Exit codes: 0 no failures,
-1 failures, 2 usage error, 3 environment error. Details:
-[docs/reference/cli.md](docs/reference/cli.md).
-
-On your own machine the game runs as your user; the CLI clears its
-environment but is not a sandbox. Only run builds you trust.
-
-## Example output
-
-```text
-PASS       SP-PE-003      Imported DLLs are available — All 4 imported DLLs are shipped or provided by the runtime.
-FAIL       SP-RUN-002     Game keeps running during the observation window [ge-proton11-12] — Crashed after 4.1 s.
-FAIL       SP-RUN-003     No crash signatures in the runtime log [ge-proton11-12] — 1 crash signature(s) in the Wine log.
-NOT_TESTED SP-HW-001      Frame rate at default settings [ge-proton11-12] — Valve's 30 fps target needs real Deck or Steam Machine hardware; this run uses CPU software rendering.
-
-Failures found: 10 pass, 2 fail, 0 warning, 2 unknown, 5 not tested. Report: preflight-results/report.html
-```
-
-An excerpt of `steamos-preflight test` on the crash fixture from [`fixtures/`](fixtures/README.md); the
-end-to-end suite checks that every fixture (crash, startup failure, missing
-asset, missing DLL, black screen, letterbox, extra window) is reported
-correctly under each supported runtime.
-
 ## Security
 
-Game builds are untrusted code. In the action they run as a separate user,
-in a network namespace with no network by default, with an empty
-environment, from a copy of the build. Runtime downloads are pinned by
-SHA-256, result files are copied out without following symlinks, PR
-comments are re-rendered from validated JSON, and every artifact is scrubbed
-of host paths. What this does and does not protect against:
-[docs/security/threat-model.md](docs/security/threat-model.md).
+Game builds are untrusted code. In the action they run as a separate user, in a network namespace with no network by default, with an empty environment, from a copy of the build. Runtime downloads are pinned by SHA-256, and each release binary has a build provenance attestation that the action verifies before running it. The sandbox is a Linux user, not a virtual machine. The [threat model](docs/security/threat-model.md) covers what this does and does not protect against.
 
-## Status
+On your own machine the game runs as your user, so only run builds you trust.
 
-Version 0.1.1, **experimental**. The CLI, report schema v1 and action
-inputs are documented and versioned, but may still change before 1.0; every
-change is listed in the [changelog](CHANGELOG.md). Verified runtimes and
-known gaps: [docs/compatibility/runtimes.md](docs/compatibility/runtimes.md).
-How the checks map to Valve's review criteria, what is missing and what
-needs hardware: [docs/roadmap.md](docs/roadmap.md).
+## FAQ
 
-Besides the synthetic fixtures, CI runs real open-source games through the
-action: OpenTTD 15.3, a Godot 4.7.2 3D game exported with Vulkan and with
-Direct3D 12 (proven to run through vkd3d-proton), and the 32-bit Chocolate
-Doom 3.0.1 with Freedoom. No real game proven to use Direct3D 9-11 is
-covered yet. Results and screenshots:
-[docs/compatibility/real-games.md](docs/compatibility/real-games.md). That
-testing showed that a game can keep running while it shows a fatal error
-**inside its own window** (OpenTTD without its graphics set). SP-DISP-005
-reads the screen with OCR and reports such text as a warning; OCR can miss
-stylised or very small text, so a clean result is not proof.
+**Is this Valve's Proton?** No. Protonaut uses GE-Proton, a community build, because Valve's builds need a Steam login. A game can behave differently under Valve's Proton on a Steam Deck. See [runtimes.md](docs/compatibility/runtimes.md).
+
+**Will a pass get me Deck Verified?** No. Valve decides that, and part of its review needs real hardware. Protonaut reports those criteria as `NOT_TESTED`. See [how the checks map to Valve's criteria](docs/roadmap.md).
+
+**Does it work if my game needs Steam running?** Not yet. There is no Steam client in the test, so a game that requires the Steam API to initialise cannot be tested.
+
+**Does it cover Direct3D 9, 10 and 11?** Partly. Direct3D 11 is covered by synthetic fixtures only, and 9 and 10 not at all. No real game proven to render through DXVK is in the suite yet. If your open-source game could fill that gap, please open an issue.
+
+**Can I use it outside GitHub Actions?** Yes. The `protonaut` CLI runs on x86-64 Linux and exits non-zero on failures, and it writes JUnit XML for other CI systems. This project only runs it on GitHub Actions.
+
+## Known limitations
+
+- Under GE-Proton10-34, Chocolate Doom (32-bit) crashes on start, cause not identified, and DXVK frames are not captured on this display, so its screenshot checks are `NOT_TESTED`.
+- Rendering uses Mesa lavapipe on the CPU, so there is no real GPU driver behaviour and there are no performance numbers.
+- OCR can miss stylised or very small text, so a clean `PN-DISP-005` is not proof that no error appeared.
+- x86-64 Linux hosts only.
+
+Version 0.2 is **experimental**. The CLI, report schema and action inputs may change before 1.0, and the [changelog](CHANGELOG.md) lists every change.
+
+## Roadmap
+
+[docs/roadmap.md](docs/roadmap.md) lists what is verified, what is a heuristic, what could still be automated, and what will always need hardware.
 
 ## Contributing
 
-`cargo test --workspace` runs without Proton or a Steam Deck. See
-[CONTRIBUTING.md](CONTRIBUTING.md) and [docs/development.md](docs/development.md).
-Reports comparing results with a real device are especially useful.
+`cargo test --workspace` runs without Proton or a Steam Deck. See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/development.md](docs/development.md). Reports comparing results with a real device are the most useful thing you can send.
 
 ## License
 
-Licensed under either of
+Licensed under either of the [Apache License, Version 2.0](LICENSE-APACHE) or the [MIT license](LICENSE-MIT), at your option. Unless you state otherwise, any contribution you submit for inclusion is dual licensed the same way, without additional terms.
 
-- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE))
-- MIT license ([LICENSE-MIT](LICENSE-MIT))
+GE-Proton, Wine, DXVK and Mesa are separate projects under their own licenses. Protonaut downloads them at test time and does not redistribute them.
 
-at your option.
-
-Unless you explicitly state otherwise, any contribution intentionally
-submitted for inclusion in this project by you, as defined in the Apache-2.0
-license, shall be dual licensed as above, without any additional terms or
-conditions.
-
-GE-Proton, Wine, DXVK and Mesa are separate projects under their own
-licenses. SteamOS Preflight downloads them at test time and does not
-redistribute them.
+Proton and Steam Deck are trademarks of Valve Corporation. Protonaut is an independent project and Valve does not endorse it.

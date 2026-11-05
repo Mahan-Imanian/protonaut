@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-SteamOS Preflight is pre-1.0. Security fixes go into the latest release
+Protonaut is pre-1.0. Security fixes go into the latest release
 and `main` only.
 
 | Version | Supported |

@@ -63,7 +63,7 @@ pub enum Category {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct CheckResult {
-    /// Stable identifier, for example `SP-PE-002`. Never reused for a
+    /// Stable identifier, for example `PN-PE-002`. Never reused for a
     /// different meaning.
     pub id: String,
     pub title: String,
@@ -262,7 +262,7 @@ mod tests {
 
     fn check(status: Status) -> CheckResult {
         CheckResult::new(
-            "SP-T-001",
+            "PN-T-001",
             "t",
             Category::Static,
             status,

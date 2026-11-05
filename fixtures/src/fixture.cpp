@@ -1,4 +1,4 @@
-// Controlled Windows test programs for SteamOS Preflight. One source, one
+// Controlled Windows test programs for Protonaut. One source, one
 // behaviour per FX_MODE (see fixtures/README.md). Build with
 // scripts/build-fixtures.sh; the output is byte-for-byte reproducible.
 #include <windows.h>

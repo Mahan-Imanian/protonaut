@@ -1,11 +1,11 @@
 # Architecture
 
 ```text
-            preflight.toml / flags
+            protonaut.toml / flags
                      │
               ┌──────▼──────┐      crates/cli
-              │ steamos-    │      commands, exit codes, cancellation,
-              │ preflight   │      redaction, writing results
+              │  protonaut  │      commands, exit codes, cancellation,
+              │             │      redaction, writing results
               └──┬───────┬──┘
      static pass │       │ runtime pass (per runtime)
 ┌────────────────▼─┐   ┌─▼──────────────────────────────┐

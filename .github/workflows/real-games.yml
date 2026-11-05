@@ -119,14 +119,14 @@ jobs:
           def status(cid, rt=None):
               return next(c for c in r["checks"] if c["id"] == cid and c.get("runtime") == rt)
           assert r["summary"]["verdict"] == "pass", r["summary"]
-          assert status("SP-PE-003")["status"] == "PASS"
+          assert status("PN-PE-003")["status"] == "PASS"
           for rt in ("ge-proton11-12", "ge-proton10-34"):
               assert runs[rt]["outcome"] == "survived", runs[rt]
-              assert status("SP-RUN-003", rt)["status"] == "PASS"
-              assert status("SP-DISP-001", rt)["status"] == "PASS"
+              assert status("PN-RUN-003", rt)["status"] == "PASS"
+              assert status("PN-DISP-001", rt)["status"] == "PASS"
           assert runs["ge-proton11-12"]["capture_verified"] is True
-          assert status("SP-DISP-002", "ge-proton11-12")["status"] == "PASS"
-          fill = status("SP-DISP-003", "ge-proton11-12")
+          assert status("PN-DISP-002", "ge-proton11-12")["status"] == "PASS"
+          fill = status("PN-DISP-003", "ge-proton11-12")
           assert fill["status"] == "WARNING" and "960x600 window" in fill["summary"], fill
           print("OpenTTD expectations hold")
           EOF
@@ -139,7 +139,7 @@ jobs:
           python3 - "$NOGFX/report.json" <<'EOF'
           import json, sys
           r = json.load(open(sys.argv[1]))
-          c = next(c for c in r["checks"] if c["id"] == "SP-DISP-005")
+          c = next(c for c in r["checks"] if c["id"] == "PN-DISP-005")
           assert c["status"] == "WARNING", c
           assert any("could be found" in d for d in c.get("details", [])), c
           assert r["summary"]["counts"]["warning"] >= 1
@@ -189,7 +189,7 @@ jobs:
           printf '\n[rendering]\n\nrendering_device/driver.windows="%s"\n' "$DRIVER" >> project.godot
           # Godot's own log names the driver and device it actually used; it
           # is written next to the build copy the action runs.
-          printf '\n[debug]\n\nfile_logging/enable_file_logging.pc=true\nfile_logging/log_path="Z:/var/tmp/steamos-preflight/build/godot.log"\n' >> project.godot
+          printf '\n[debug]\n\nfile_logging/enable_file_logging.pc=true\nfile_logging/log_path="Z:/var/tmp/protonaut/build/godot.log"\n' >> project.godot
           cat > export_presets.cfg <<'EOF'
           [preset.0]
           name="Windows Desktop"
@@ -225,7 +225,7 @@ jobs:
         run: |
           # The log of the last runtime run (GE-Proton10-34); each run starts
           # the game afresh and the file is overwritten.
-          sudo cat /var/tmp/steamos-preflight/build/godot.log | head -n 12 | tee godot-head.txt
+          sudo cat /var/tmp/protonaut/build/godot.log | head -n 12 | tee godot-head.txt
           case "$DRIVER" in
             vulkan) grep -q "^Vulkan .* Using Device" godot-head.txt ;;
             d3d12) grep -q "^D3D12 .* Using Device" godot-head.txt ;;
@@ -261,13 +261,13 @@ jobs:
           def status(cid, rt=None):
               return next(c for c in r["checks"] if c["id"] == cid and c.get("runtime") == rt)
           assert r["summary"]["verdict"] == "pass", r["summary"]
-          assert status("SP-PE-003")["status"] == "PASS"
+          assert status("PN-PE-003")["status"] == "PASS"
           for rt in ("ge-proton11-12", "ge-proton10-34"):
               assert runs[rt]["outcome"] == "survived", runs[rt]
-              assert status("SP-RUN-003", rt)["status"] == "PASS"
+              assert status("PN-RUN-003", rt)["status"] == "PASS"
           assert runs["ge-proton11-12"]["capture_verified"] is True
-          assert status("SP-DISP-002", "ge-proton11-12")["status"] == "PASS"
-          assert "1152x648 window" in status("SP-DISP-003", "ge-proton11-12")["summary"]
+          assert status("PN-DISP-002", "ge-proton11-12")["status"] == "PASS"
+          assert "1152x648 window" in status("PN-DISP-003", "ge-proton11-12")["summary"]
           print("Godot expectations hold")
           EOF
 
@@ -317,18 +317,18 @@ jobs:
           runs = {run["runtime"]: run for run in r["runs"]}
           def status(cid, rt=None):
               return next(c for c in r["checks"] if c["id"] == cid and c.get("runtime") == rt)
-          assert status("SP-PE-002")["status"] == "PASS"
+          assert status("PN-PE-002")["status"] == "PASS"
           new = "ge-proton11-12"
           assert runs[new]["outcome"] == "survived", runs[new]
           assert runs[new]["capture_verified"] is True
-          for cid in ("SP-RUN-002", "SP-RUN-003", "SP-DISP-001", "SP-DISP-002", "SP-DISP-004"):
+          for cid in ("PN-RUN-002", "PN-RUN-003", "PN-DISP-001", "PN-DISP-002", "PN-DISP-004"):
               assert status(cid, new)["status"] == "PASS", status(cid, new)
-          assert "1280x800" in status("SP-DISP-001", new)["summary"]
-          bars = status("SP-DISP-003", new)
+          assert "1280x800" in status("PN-DISP-001", new)["summary"]
+          bars = status("PN-DISP-003", new)
           assert bars["status"] == "WARNING" and "left 10" in bars["summary"], bars
           old = "ge-proton10-34"
           assert runs[old]["outcome"] == "crashed", runs[old]
-          assert status("SP-RUN-002", old)["status"] == "FAIL"
+          assert status("PN-RUN-002", old)["status"] == "FAIL"
           assert r["summary"]["verdict"] == "fail"
           print("Chocolate Doom expectations hold")
           EOF

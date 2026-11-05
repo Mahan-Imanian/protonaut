@@ -32,7 +32,7 @@
       "properties": {
         "skip": {
           "default": [],
-          "description": "Check ids to leave out of the report, for example `SP-MEDIA-001`.",
+          "description": "Check ids to leave out of the report, for example `PN-MEDIA-001`.",
           "items": {
             "type": "string"
           },
@@ -81,7 +81,7 @@
       "type": "object"
     }
   },
-  "$id": "https://github.com/Mahan-Imanian/steamos-preflight/blob/main/schemas/config.v1.schema.json",
+  "$id": "https://github.com/Mahan-Imanian/protonaut/blob/main/schemas/config.v1.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "The file as written by the user.",
@@ -118,6 +118,6 @@
       "type": "integer"
     }
   },
-  "title": "SteamOS Preflight configuration",
+  "title": "Protonaut configuration",
   "type": "object"
 }

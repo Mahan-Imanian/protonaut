@@ -1,5 +1,5 @@
 name: Bug report
-description: SteamOS Preflight itself misbehaves (crash, wrong exit code, broken report).
+description: Protonaut itself misbehaves (crash, wrong exit code, broken report).
 labels: [bug]
 body:
   - type: markdown
@@ -9,7 +9,7 @@ body:
     id: version
     attributes:
       label: Version or commit
-      placeholder: steamos-preflight --version, or the action's SHA
+      placeholder: protonaut --version, or the action's SHA
     validations:
       required: true
   - type: textarea
@@ -28,5 +28,5 @@ body:
   - type: textarea
     id: diagnose
     attributes:
-      label: Output of `steamos-preflight diagnose`
+      label: Output of `protonaut diagnose`
       render: text

@@ -32,13 +32,13 @@ change of meaning gets a new id. See [docs/reference/checks.md](docs/reference/c
 
 ## Compatibility reports
 
-If SteamOS Preflight disagrees with what you see on a real Steam Deck, open
+If Protonaut disagrees with what you see on a real Steam Deck, open
 a "Compatibility report" issue with the report (redact anything private) and
 what happened on the device. These reports are how the checks get better.
 
 ## Licensing of contributions
 
-SteamOS Preflight is licensed under MIT OR Apache-2.0. Unless you explicitly
+Protonaut is licensed under MIT OR Apache-2.0. Unless you explicitly
 state otherwise, any contribution intentionally submitted for inclusion by
 you, as defined in the Apache-2.0 license, shall be dual licensed as above,
 without any additional terms or conditions.
