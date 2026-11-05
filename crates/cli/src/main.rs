@@ -206,8 +206,7 @@ fn init_logging(cli: &Cli) {
         2 => "debug",
         _ => "trace",
     };
-    let filter =
-        EnvFilter::try_from_env("PROTONAUT_LOG").unwrap_or_else(|_| EnvFilter::new(level));
+    let filter = EnvFilter::try_from_env("PROTONAUT_LOG").unwrap_or_else(|_| EnvFilter::new(level));
     let builder = tracing_subscriber::fmt()
         .with_env_filter(filter)
         .with_writer(std::io::stderr)
