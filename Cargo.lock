@@ -403,9 +403,9 @@ checksum = "521739c6d2bac4aa25192232afe6841231376b2b26d4d9fae5ecf8ca5772e441"
 
 [[package]]
 name = "object"
-version = "0.40.0"
+version = "0.41.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd229a0361b9d0d4396176e02d65897f487eebeab7caa6d443855ee152ca0b9c"
+checksum = "11dbdb66876026054e4ffc8d757d862bdf5df5aebd5c0b95a41f17832a94f7d2"
 dependencies = [
  "memchr",
 ]
@@ -448,6 +448,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4a6394b9e965e73d0a289ee54f589087e2c676aedf60885baf52c76b771e4958"
 
 [[package]]
+name = "proc-macro2"
+version = "1.0.107"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9"
+dependencies = [
+ "unicode-ident",
+]
+
+[[package]]
+name = "protonaut"
+version = "0.2.2"
+dependencies = [
+ "clap",
+ "nix",
+ "protonaut-core",
+ "protonaut-runtime",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "protonaut-core"
 version = "0.2.2"
 dependencies = [
@@ -476,15 +499,6 @@ dependencies = [
  "tokio",
  "toml",
  "tracing",
-]
-
-[[package]]
-name = "proc-macro2"
-version = "1.0.107"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9"
-dependencies = [
- "unicode-ident",
 ]
 
 [[package]]
@@ -681,20 +695,6 @@ name = "smallvec"
 version = "1.16.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0d5d4b1981b8bbbb7aed204cae5726d683d5d6ac7e74ec54122ea28f315e7c8"
-
-[[package]]
-name = "protonaut"
-version = "0.2.2"
-dependencies = [
- "clap",
- "nix",
- "protonaut-core",
- "protonaut-runtime",
- "serde_json",
- "tempfile",
- "tokio",
- "tracing-subscriber",
-]
 
 [[package]]
 name = "strsim"
