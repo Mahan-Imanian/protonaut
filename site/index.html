@@ -85,6 +85,10 @@ a{color:var(--orange)}
 .limits{color:var(--mute);padding-left:20px}.limits li{margin:8px 0}
 footer{padding:34px 0;border-top:1px solid var(--line);color:var(--mute);font-size:13px}
 .r{opacity:0;transform:translateY(22px);transition:opacity .6s,transform .6s}.r.on{opacity:1;transform:none}
+section>p,.limits,details p{max-width:76ch}
+ol.t li{grid-template-columns:48px minmax(0,72ch)}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--orange);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.bg{animation:none}.r{opacity:1;transform:none;transition:none}.row{animation:none;opacity:1;transform:none}.cta:hover{transform:none}}
 @media (max-width:860px){.hero,.two{grid-template-columns:1fr}.catch{grid-template-columns:1fr}.hero{padding-top:24px;gap:36px}nav div{gap:14px}.cta2{display:block;margin:16px 0 0}}
 </style>
 </head>
