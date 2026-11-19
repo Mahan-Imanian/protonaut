@@ -87,6 +87,11 @@ footer{padding:34px 0;border-top:1px solid var(--line);color:var(--mute);font-si
 .r{opacity:0;transform:translateY(22px);transition:opacity .6s,transform .6s}.r.on{opacity:1;transform:none}
 section>p,.limits,details p{max-width:76ch}
 ol.t li{grid-template-columns:48px minmax(0,72ch)}
+.copy pre{padding-right:96px}
+table{min-width:620px}
+@media (max-width:560px){nav{flex-wrap:wrap;row-gap:10px}nav div{width:100%;gap:18px}.copy pre{padding-right:18px;padding-top:52px}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+pre:focus-visible,.scroll:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
 a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--orange);outline-offset:3px}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.bg{animation:none}.r{opacity:1;transform:none;transition:none}.row{animation:none;opacity:1;transform:none}.cta:hover{transform:none}}
 @media (max-width:860px){.hero,.two{grid-template-columns:1fr}.catch{grid-template-columns:1fr}.hero{padding-top:24px;gap:36px}nav div{gap:14px}.cta2{display:block;margin:16px 0 0}}
@@ -96,7 +101,8 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var
 <div class="bg"></div>
 
 <div class="wrap">
-<nav><a class="brand" href="#">PROTONAUT</a><div><a href="#start">Quick start</a><a href="#catches">What it catches</a><a href="#faq">FAQ</a><a href="https://github.com/Mahan-Imanian/protonaut">GitHub</a></div></nav>
+<nav aria-label="Site"><a class="brand" href="#">PROTONAUT</a><div><a href="#start">Quick start</a><a href="#catches">What it catches</a><a href="#faq">FAQ</a><a href="https://github.com/Mahan-Imanian/protonaut">GitHub</a></div></nav>
+<main>
 <header class="hero">
 <div>
 <h1>Test your Windows game build <em>on Proton.</em></h1>
@@ -114,11 +120,11 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var
 
 <section id="start" class="r"><h2>One step in your workflow</h2>
 <div class="two">
-<div class="copy"><button data-c="a">Copy</button><pre id="a">- uses: Mahan-Imanian/protonaut@v0
+<div class="copy"><button data-c="a">Copy</button><pre id="a" tabindex="0" aria-label="Workflow step">- uses: Mahan-Imanian/protonaut@v0
   with:
     build: dist/Windows
     exe: MyGame.exe</pre><p style="color:var(--mute)">Runs on <code>ubuntu-24.04</code>. The step fails on any FAIL, writes the report to the job summary and uploads screenshots and logs. Workflows for Godot, Unity and Unreal are in the <a href="https://github.com/Mahan-Imanian/protonaut/blob/main/docs/recipes.md">recipes</a>.</p></div>
-<div class="copy"><button data-c="b">Copy</button><pre id="b">curl -fsSL https://raw.githubusercontent.com/Mahan-Imanian/protonaut/main/install.sh | sh -s -- --with-deps
+<div class="copy"><button data-c="b">Copy</button><pre id="b" tabindex="0" aria-label="Install commands">curl -fsSL https://raw.githubusercontent.com/Mahan-Imanian/protonaut/main/install.sh | sh -s -- --with-deps
 sudo protonaut setup
 protonaut test dist/Windows --exe MyGame.exe --install</pre><p style="color:var(--mute)">Or run the CLI on your own Ubuntu 24.04 machine. On your machine the game runs as your user, so only run builds you trust.</p></div>
 </div></section>
@@ -141,8 +147,8 @@ protonaut test dist/Windows --exe MyGame.exe --install</pre><p style="color:var(
 <li>Rules turn the evidence into report.json, an HTML report, JUnit XML and a PR comment.</li>
 </ol></section>
 
-<section class="r"><h2>Where it fits</h2><div class="scroll"><table>
-<tr><th></th><th>Protonaut</th><th>Valve's review</th><th>A Deck on your desk</th></tr>
+<section class="r"><h2>Where it fits</h2><div class="scroll" tabindex="0" role="region" aria-label="Comparison table"><table>
+<tr><th><span class="sr">Compared on</span></th><th>Protonaut</th><th>Valve's review</th><th>A Deck on your desk</th></tr>
 <tr><td>Runs</td><td>Every pull request</td><td>After you submit a build</td><td>When someone has time</td></tr>
 <tr><td>Crashes and black screens</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td></tr>
 <tr><td>Frame rate and controller feel</td><td class="n">No</td><td class="y">Yes</td><td class="y">Yes</td></tr>
@@ -163,6 +169,7 @@ protonaut test dist/Windows --exe MyGame.exe --install</pre><p style="color:var(
 <details><summary>Is this Valve's Proton?</summary><p>No. Protonaut uses GE-Proton, a community build, because Valve's builds need a Steam login. A game can behave differently under Valve's Proton.</p></details>
 </section>
 
+</main>
 <footer>Protonaut is an independent community project, not affiliated with or endorsed by Valve. Proton and Steam Deck are trademarks of Valve Corporation. Licensed under Apache-2.0.</footer>
 </div>
 <script>
