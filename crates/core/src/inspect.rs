@@ -213,6 +213,7 @@ mod tests {
         }
     }
 
+    #[cfg(unix)]
     #[test]
     fn scan_lists_files_sorted_with_slashes_and_skips_symlinks() {
         let dir = tempfile::tempdir().unwrap();
