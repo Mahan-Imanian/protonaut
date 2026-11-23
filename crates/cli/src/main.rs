@@ -195,7 +195,10 @@ pub struct ReportArgs {
 
 #[derive(Copy, Clone, Debug, ValueEnum)]
 pub enum ReportFormat {
+    /// The PR comment body.
     Markdown,
+    /// The GitHub Actions job summary.
+    Summary,
     Html,
     Junit,
     Json,
@@ -210,13 +213,19 @@ fn init_logging(cli: &Cli) {
         _ => "trace",
     };
     let filter = EnvFilter::try_from_env("PROTONAUT_LOG").unwrap_or_else(|_| EnvFilter::new(level));
+    use std::io::IsTerminal;
+    let ansi = std::io::stderr().is_terminal() && std::env::var_os("NO_COLOR").is_none();
+    // GitHub Actions already timestamps every log line.
+    let in_actions = std::env::var("GITHUB_ACTIONS").is_ok_and(|v| v == "true");
     let builder = tracing_subscriber::fmt()
         .with_env_filter(filter)
         .with_writer(std::io::stderr)
-        .with_target(false);
-    match cli.log_format {
-        LogFormat::Text => builder.init(),
-        LogFormat::Json => builder.json().init(),
+        .with_target(false)
+        .with_ansi(ansi);
+    match (cli.log_format, in_actions) {
+        (LogFormat::Json, _) => builder.json().init(),
+        (LogFormat::Text, true) => builder.without_time().init(),
+        (LogFormat::Text, false) => builder.init(),
     }
 }
 

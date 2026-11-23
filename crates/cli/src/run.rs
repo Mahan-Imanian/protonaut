@@ -13,7 +13,9 @@ use protonaut_core::inspect::{BuildTree, PeInfo};
 use protonaut_core::model::{
     EnvironmentInfo, REPORT_SCHEMA_VERSION, Report, RunSummary, TargetInfo, Verdict,
 };
-use protonaut_core::report::{ReportInput, assemble, render_html, render_junit, render_markdown};
+use protonaut_core::report::{
+    ReportInput, assemble, render_html, render_junit, render_markdown, render_summary,
+};
 use protonaut_core::runtime_checks;
 use protonaut_core::static_checks::{StaticContext, StaticInput, run_static_checks};
 use protonaut_runtime::display::{Display, SYSTEM_CONFIG_DIR, SYSTEM_CONFIG_NAME, xorg_config};
@@ -395,80 +397,23 @@ fn print_summary(report: &Report, results: &Path, json: bool) -> Result<(), CliE
         println!("{}", serde_json::to_string_pretty(report).map_err(env_err)?);
         return Ok(());
     }
-    let color = std::io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none();
-    let mut checks: Vec<_> = report.checks.iter().collect();
-    checks.sort_by_key(|c| severity(c.status.as_str()));
-    for c in checks {
-        let rt = c
-            .runtime
-            .as_deref()
-            .map(|r| format!(" [{r}]"))
-            .unwrap_or_default();
-        let detail = if severity(c.status.as_str()) >= severity("WARNING") {
-            format!(": {}", c.summary)
-        } else {
-            String::new()
-        };
-        println!(
-            "{} {:<14} {}{}{}",
-            status_label(c.status.as_str(), color),
-            c.id,
-            c.title,
-            rt,
-            detail
-        );
-    }
-    let n = &report.summary.counts;
-    println!(
-        "\n{}: {} pass, {} fail, {} warning, {} unknown, {} not tested. Report: {}",
-        headline_label(report, color),
-        n.pass,
-        n.fail,
-        n.warning,
-        n.unknown,
-        n.not_tested,
-        results.join("report.html").display()
+    let path = results.join("report.html");
+    print!(
+        "{}",
+        protonaut_core::terminal::render(report, &path.display().to_string(), color_enabled())
     );
     Ok(())
 }
 
-fn severity(status: &str) -> u8 {
-    match status {
-        "PASS" => 0,
-        "WARNING" => 2,
-        "FAIL" => 3,
-        _ => 1,
-    }
+/// Colour only on a terminal, and never with NO_COLOR or TERM=dumb.
+fn color_enabled() -> bool {
+    std::io::stdout().is_terminal()
+        && std::env::var_os("NO_COLOR").is_none()
+        && std::env::var("TERM").map_or(true, |t| t != "dumb")
 }
 
 fn step(message: &str) {
     eprintln!("> {message}");
-}
-
-fn paint(text: &str, code: &str, color: bool) -> String {
-    if color {
-        format!("\x1b[{code}m{text}\x1b[0m")
-    } else {
-        text.to_owned()
-    }
-}
-
-fn status_label(status: &str, color: bool) -> String {
-    let code = match status {
-        "PASS" => "32",
-        "FAIL" => "1;31",
-        "WARNING" => "33",
-        _ => "2",
-    };
-    paint(&format!("{status:<10}"), code, color)
-}
-
-fn headline_label(report: &Report, color: bool) -> String {
-    let code = match report.summary.verdict {
-        Verdict::Pass => "1;32",
-        Verdict::Fail => "1;31",
-    };
-    paint(&protonaut_core::report::headline(report), code, color)
 }
 
 fn verdict_code(report: &Report) -> u8 {
@@ -547,6 +492,7 @@ fn report(a: ReportArgs) -> Result<u8, CliError> {
         serde_json::from_value(value).map_err(|e| usage(format!("invalid report: {e}")))?;
     let body = match a.format {
         ReportFormat::Markdown => render_markdown(&report, a.artifact_url.as_deref()),
+        ReportFormat::Summary => render_summary(&report, a.artifact_url.as_deref()),
         ReportFormat::Html => render_html(&report),
         ReportFormat::Junit => render_junit(&report),
         ReportFormat::Json => serde_json::to_string_pretty(&report).map_err(env_err)? + "\n",
@@ -593,29 +539,4 @@ fn schema(write: bool) -> Result<u8, CliError> {
         }
     }
     Ok(exit::PASS)
-}
-
-#[cfg(test)]
-mod output_tests {
-    use super::*;
-
-    #[test]
-    fn labels_are_plain_without_color() {
-        assert_eq!(status_label("FAIL", false), "FAIL      ");
-    }
-
-    #[test]
-    fn failures_sort_last_so_they_sit_above_the_summary() {
-        let mut statuses = ["FAIL", "PASS", "WARNING", "NOT_TESTED", "UNKNOWN"];
-        statuses.sort_by_key(|s| severity(s));
-        assert_eq!(
-            statuses,
-            ["PASS", "NOT_TESTED", "UNKNOWN", "WARNING", "FAIL"]
-        );
-    }
-
-    #[test]
-    fn color_keeps_column_padding() {
-        assert_eq!(status_label("PASS", true), "\x1b[32mPASS      \x1b[0m");
-    }
 }

@@ -236,7 +236,8 @@ runs:
           # Re-render from the JSON with the trusted CLI; report.md from the
           # sandbox is not trusted.
           protonaut report "$OUT/report.json" --format markdown --out "$OUT/report.md"
-          sed '1d' "$OUT/report.md" >> "$GITHUB_STEP_SUMMARY"
+          protonaut report "$OUT/report.json" --format summary \
+            --artifact-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
         else
           echo "## Protonaut did not produce a report" >> "$GITHUB_STEP_SUMMARY"
         fi

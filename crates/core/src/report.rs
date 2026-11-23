@@ -15,7 +15,6 @@ use crate::model::{
 pub const TOOL_NAME: &str = "protonaut";
 /// Hidden marker used to find and update an earlier PR comment.
 pub const COMMENT_MARKER: &str = "<!-- protonaut-report -->";
-const MAX_DETAILS_RENDERED: usize = 10;
 const MAX_TEXT: usize = 300;
 
 pub struct ReportInput {
@@ -131,143 +130,159 @@ pub fn md_escape(s: &str) -> String {
     out
 }
 
-fn status_icon(s: Status) -> &'static str {
-    match s {
-        Status::Pass => "✅",
-        Status::Fail => "❌",
-        Status::Warning => "⚠️",
-        Status::Unknown => "❔",
-        Status::NotTested => "⏭️",
-    }
-}
-
 /// The one-line result. A run with warnings is never summarised as a plain
 /// pass: warnings are things a person has to look at.
 pub fn headline(r: &Report) -> String {
-    let w = r.summary.counts.warning;
+    let n = |s: Status| r.checks.iter().filter(|c| c.status == s).count();
+    let (fails, warns) = (n(Status::Fail), n(Status::Warning));
+    let plural =
+        |k: usize, one: &str, many: &str| format!("{k} {}", if k == 1 { one } else { many });
     match r.summary.verdict {
-        Verdict::Fail => "Failures found".to_owned(),
-        Verdict::Pass if w > 0 => format!(
-            "No failures, {w} warning{} to review",
-            if w == 1 { "" } else { "s" }
+        Verdict::Fail if fails > 0 => format!("{} failed", plural(fails, "check", "checks")),
+        Verdict::Fail => format!("{} failed the run", plural(warns, "warning", "warnings")),
+        Verdict::Pass if warns > 0 => format!(
+            "No failures, {} to review",
+            plural(warns, "warning", "warnings")
         ),
-        Verdict::Pass => "No failures found".to_owned(),
+        Verdict::Pass => "No failures".to_owned(),
     }
 }
 
+/// Splits a summary into its first sentence and the rest, so a problem row
+/// can lead with what happened.
+pub fn first_sentence(text: &str) -> (String, &str) {
+    let stop = [". ", "; "].iter().filter_map(|p| text.find(p)).min();
+    match stop {
+        Some(i) => (format!("{}.", &text[..i]), text[i + 2..].trim_start()),
+        None => (text.to_owned(), ""),
+    }
+}
+
+/// The check catalogue; each check id has an anchor there.
+pub const CHECKS_URL: &str =
+    "https://github.com/Mahan-Imanian/protonaut/blob/main/docs/reference/checks.md";
+
+/// The catalogue entry for a check id.
+pub fn check_url(id: &str) -> String {
+    format!("{CHECKS_URL}#{}", id.to_ascii_lowercase())
+}
+
+/// OCR text often starts or ends with a stray curly quote mark.
+pub fn clean_detail(d: &str) -> &str {
+    if d.matches('“').count() == d.matches('”').count() {
+        return d;
+    }
+    d.trim_matches(|c: char| matches!(c, '“' | '”') || c.is_whitespace())
+}
+
+/// A detail line as short outputs show it. For OCR text the line starts at
+/// the first error-like word, because the text before it is usually noise;
+/// the HTML report keeps the whole line.
+pub fn short_detail<'a>(c: &CheckResult, d: &'a str) -> std::borrow::Cow<'a, str> {
+    let d = clean_detail(d);
+    if c.id != "PN-DISP-005" {
+        return std::borrow::Cow::Borrowed(d);
+    }
+    let lower = d.to_lowercase();
+    let start = [
+        "error",
+        "fail",
+        "cannot",
+        "can't",
+        "not found",
+        "missing",
+        "requires",
+    ]
+    .iter()
+    .filter_map(|k| lower.find(k))
+    .min();
+    match start {
+        Some(i) if i > 0 && d.is_char_boundary(i) => {
+            let head = d[..i].rfind(' ').map_or(i, |sp| sp + 1);
+            std::borrow::Cow::Owned(format!("…{}", d[head..].trim_end_matches(['>', ' '])))
+        }
+        _ => std::borrow::Cow::Borrowed(d),
+    }
+}
+
+/// Detail lines worth showing in short outputs. For OCR only the first
+/// match is shown; the rest is usually noise.
+pub fn detail_limit(c: &CheckResult, max: usize) -> usize {
+    if c.id == "PN-DISP-005" { 1 } else { max }
+}
+
+/// What to do next for a failure or a warning, limited to what the evidence
+/// supports. Runtime problems also get a command that reproduces the run.
+pub fn next_step(
+    c: &CheckResult,
+    exe: &str,
+    runtime: Option<&str>,
+) -> Option<(&'static str, Option<String>)> {
+    let repro = runtime.map(|rt| format!("protonaut test <build dir> --exe {exe} --runtime {rt}"));
+    if c.status == Status::Warning {
+        return Some(match c.id.as_str() {
+            "PN-DISP-002" => (
+                "Open the frame in the report: a long loading screen and a rendering failure both look black.",
+                repro,
+            ),
+            "PN-DISP-003" => (
+                "Default to the display resolution, or to 1280x800, on first launch.",
+                None,
+            ),
+            "PN-DISP-004" => (
+                "Look for an error, launcher or hardware warning window at start-up and remove it.",
+                repro,
+            ),
+            "PN-DISP-005" => (
+                "Open the frame in the report. If the text is a real error, the build starts without something it needs.",
+                repro,
+            ),
+            "PN-AC-001" => (
+                "Check with the anti-cheat vendor whether Proton support is enabled for your game.",
+                None,
+            ),
+            "PN-LAUNCH-001" => (
+                "Make sure the exe input points at the game itself, not a launcher.",
+                None,
+            ),
+            "PN-MEDIA-001" => (
+                "Test video playback under Proton, or ship the videos in a format that does not need Media Foundation.",
+                None,
+            ),
+            _ => ("Open the evidence in the report.", None),
+        });
+    }
+    if c.status != Status::Fail {
+        return None;
+    }
+    Some(match c.id.as_str() {
+        "PN-RUN-001" | "PN-RUN-002" | "PN-RUN-003" | "PN-DISP-001" => (
+            "Read the crash line in the runtime log; the command below reproduces the run.",
+            repro,
+        ),
+        "PN-PE-001" | "PN-PE-002" => (
+            "Check that the exe input points at the Windows build you meant to test.",
+            None,
+        ),
+        "PN-PE-003" => (
+            "Ship the missing DLLs with the build, or remove the dependency.",
+            None,
+        ),
+        _ => (
+            "Open the evidence above and the runtime log for this run.",
+            None,
+        ),
+    })
+}
+
+/// The PR comment body.
 pub fn render_markdown(r: &Report, artifact_url: Option<&str>) -> String {
-    let mut s = String::new();
-    let c = &r.summary.counts;
-    let icon = match (r.summary.verdict, c.warning) {
-        (Verdict::Fail, _) => "❌",
-        (Verdict::Pass, 0) => "✅",
-        (Verdict::Pass, _) => "⚠️",
-    };
-    let head = format!("{icon} Protonaut: {}", headline(r));
-    let _ = writeln!(s, "{COMMENT_MARKER}\n## {head}\n");
-    let _ = writeln!(
-        s,
-        "`{}` · {} pass · {} fail · {} warning · {} unknown · {} not tested\n",
-        md_escape(&r.target.exe).replace('`', ""),
-        c.pass,
-        c.fail,
-        c.warning,
-        c.unknown,
-        c.not_tested
-    );
-    if !r.runs.is_empty() {
-        let _ = writeln!(
-            s,
-            "| Runtime | Outcome | Exit code | Duration | Screenshot capture |\n|---|---|---|---|---|"
-        );
-        for run in &r.runs {
-            let capture = match run.capture_verified {
-                Some(true) => "verified",
-                Some(false) => "not working in this runtime",
-                None => "not checked",
-            };
-            let _ = writeln!(
-                s,
-                "| {} ({}) | {:?} | {} | {:.1} s | {} |",
-                md_escape(&run.runtime),
-                md_escape(&run.runtime_version),
-                run.outcome,
-                run.exit_code.map_or("–".to_owned(), |c| c.to_string()),
-                run.duration_ms as f64 / 1000.0,
-                capture
-            );
-        }
-        s.push('\n');
-    }
-    let important: Vec<&CheckResult> = r
-        .checks
-        .iter()
-        .filter(|c| matches!(c.status, Status::Fail | Status::Warning))
-        .collect();
-    if !important.is_empty() {
-        let _ = writeln!(s, "### Needs attention\n");
-        for check in &important {
-            write_check_line(&mut s, check);
-        }
-        s.push('\n');
-    }
-    let rest: Vec<&CheckResult> = r
-        .checks
-        .iter()
-        .filter(|c| !matches!(c.status, Status::Fail | Status::Warning))
-        .collect();
-    if !rest.is_empty() {
-        let _ = writeln!(
-            s,
-            "<details><summary>Other checks ({})</summary>\n",
-            rest.len()
-        );
-        for check in &rest {
-            write_check_line(&mut s, check);
-        }
-        let _ = writeln!(s, "\n</details>\n");
-    }
-    if let Some(url) = artifact_url.filter(|u| u.starts_with("https://")) {
-        let _ = writeln!(
-            s,
-            "Screenshots, logs and the full report: [workflow artifacts]({})\n",
-            url.replace(['(', ')', ' '], "")
-        );
-    }
-    let _ = writeln!(
-        s,
-        "<sub>Tested with [Protonaut](https://github.com/Mahan-Imanian/protonaut). Independent community tool, not affiliated with Valve. It cannot predict a Steam Deck Verified rating; software rendering does not test GPU performance or controller feel.</sub>"
-    );
-    s
+    crate::markdown::comment(r, artifact_url)
 }
 
-fn write_check_line(s: &mut String, c: &CheckResult) {
-    let rt = c
-        .runtime
-        .as_deref()
-        .map(|r| format!(" ({})", md_escape(r)))
-        .unwrap_or_default();
-    let ev = format!("{:?}", c.evidence).to_lowercase();
-    let _ = writeln!(
-        s,
-        "- {} **{}** `{}`{} — {} _(evidence: {})_",
-        status_icon(c.status),
-        md_escape(&c.title),
-        md_escape(&c.id).replace('`', ""),
-        rt,
-        md_escape(&c.summary),
-        ev
-    );
-    for d in c.details.iter().take(MAX_DETAILS_RENDERED) {
-        let _ = writeln!(s, "  - {}", md_escape(d));
-    }
-    if c.details.len() > MAX_DETAILS_RENDERED {
-        let _ = writeln!(
-            s,
-            "  - … {} more in report.json",
-            c.details.len() - MAX_DETAILS_RENDERED
-        );
-    }
+/// The GitHub Actions job summary, which has more room than a comment.
+pub fn render_summary(r: &Report, artifact_url: Option<&str>) -> String {
+    crate::markdown::summary(r, artifact_url)
 }
 
 pub fn xml_escape(s: &str) -> String {
@@ -366,107 +381,8 @@ pub fn is_safe_relative_path(p: &str) -> bool {
 }
 
 pub fn render_html(r: &Report) -> String {
-    let mut s = String::new();
-    let c = &r.summary.counts;
-    let verdict = headline(r);
-    let _ = write!(
-        s,
-        "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\
-<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src 'self'; style-src 'unsafe-inline'\">\
-<title>Protonaut report</title><style>{CSS}</style></head><body><main>\
-<h1>Protonaut <span class=\"v {}\">{}</span></h1>\
-<p class=\"meta\"><code>{}</code> · {} · {} pass · {} fail · {} warning · {} unknown · {} not tested</p>",
-        match (r.summary.verdict, c.warning) {
-            (Verdict::Fail, _) => "bad",
-            (Verdict::Pass, 0) => "ok",
-            (Verdict::Pass, _) => "warn",
-        },
-        verdict,
-        html_escape(&r.target.exe),
-        html_escape(&r.generated_at),
-        c.pass,
-        c.fail,
-        c.warning,
-        c.unknown,
-        c.not_tested
-    );
-    if !r.runs.is_empty() {
-        s.push_str("<h2>Runs</h2><table><tr><th>Runtime</th><th>Outcome</th><th>Exit</th><th>Duration</th><th>Capture</th></tr>");
-        for run in &r.runs {
-            let _ = write!(
-                s,
-                "<tr><td>{} <small>{}</small></td><td>{:?}</td><td>{}</td><td>{:.1} s</td><td>{}</td></tr>",
-                html_escape(&run.runtime),
-                html_escape(&run.runtime_version),
-                run.outcome,
-                run.exit_code.map_or("–".to_owned(), |c| c.to_string()),
-                run.duration_ms as f64 / 1000.0,
-                match run.capture_verified {
-                    Some(true) => "verified",
-                    Some(false) => "not working",
-                    None => "not checked",
-                }
-            );
-        }
-        s.push_str("</table>");
-    }
-    s.push_str("<h2>Checks</h2><table><tr><th>Status</th><th>Check</th><th>Runtime</th><th>Result</th><th>Evidence</th></tr>");
-    // Problems first: FAIL, WARNING, UNKNOWN, NOT_TESTED, then PASS.
-    let mut ordered: Vec<&CheckResult> = r.checks.iter().collect();
-    ordered.sort_by_key(|c| c.status);
-    for check in ordered {
-        let _ = write!(
-            s,
-            "<tr class=\"{}\"><td>{}</td><td><b>{}</b><br><code>{}</code></td><td>{}</td><td>{}",
-            check.status.as_str().to_lowercase(),
-            check.status.as_str(),
-            html_escape(&check.title),
-            html_escape(&check.id),
-            html_escape(check.runtime.as_deref().unwrap_or("–")),
-            html_escape(&check.summary)
-        );
-        if !check.details.is_empty() {
-            s.push_str("<ul>");
-            for d in check.details.iter().take(50) {
-                let _ = write!(s, "<li>{}</li>", html_escape(d));
-            }
-            s.push_str("</ul>");
-        }
-        for a in check.artifacts.iter().filter(|a| is_safe_relative_path(a)) {
-            if a.ends_with(".png") {
-                let _ = write!(
-                    s,
-                    "<a href=\"{0}\"><img src=\"{0}\" alt=\"screenshot\" loading=\"lazy\"></a>",
-                    html_escape(a)
-                );
-            } else {
-                let _ = write!(s, "<br><a href=\"{0}\">{0}</a>", html_escape(a));
-            }
-        }
-        let _ = write!(s, "</td><td>{:?}</td></tr>", check.evidence);
-    }
-    s.push_str("</table><h2>Limitations</h2><ul>");
-    for l in &r.limitations {
-        let _ = write!(s, "<li>{}</li>", html_escape(l));
-    }
-    let _ = writeln!(
-        s,
-        "</ul><p class=\"meta\"><a href=\"https://github.com/Mahan-Imanian/protonaut\">{}</a> {} · report schema v{}</p></main></body></html>",
-        html_escape(&r.tool.name),
-        html_escape(&r.tool.version),
-        r.schema_version
-    );
-    s
+    crate::html::render(r)
 }
-
-const CSS: &str = "body{font:15px/1.5 system-ui,sans-serif;margin:0;background:#f7f7f8;color:#1b1b1f}main{max-width:1100px;margin:0 auto;padding:16px}\
-table{border-collapse:collapse;width:100%;background:#fff;margin:8px 0 24px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;vertical-align:top}\
-.meta{color:#555}.v{font-size:.6em;padding:2px 8px;border-radius:6px;vertical-align:middle}.ok{background:#d9f5df}.bad{background:#fbdcdc}.warn{background:#fff1cc}\
-tr.fail td:first-child{background:#fbdcdc}tr.warning td:first-child{background:#fff1cc}tr.pass td:first-child{background:#d9f5df}\
-tr.unknown td:first-child,tr.not_tested td:first-child{background:#eceff3}img{max-width:320px;display:block;margin-top:6px;border:1px solid #ccc}\
-@media (prefers-color-scheme:dark){body{background:#151518;color:#e8e8ec}table{background:#1f1f24}th,td{border-color:#3a3a42}.meta{color:#a0a0aa}\
-.ok,tr.pass td:first-child{background:#1d3b25}.bad,tr.fail td:first-child{background:#4a2020}.warn{background:#4a3c14}tr.warning td:first-child{background:#4a3c14}\
-tr.unknown td:first-child,tr.not_tested td:first-child{background:#2a2d33}}";
 
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
@@ -518,14 +434,12 @@ mod tests {
 
     #[test]
     fn warnings_are_never_summarised_as_a_plain_pass() {
-        assert_eq!(headline(&sample(Status::Pass)), "No failures found");
+        assert_eq!(headline(&sample(Status::Pass)), "No failures");
         let w = sample(Status::Warning);
         assert_eq!(headline(&w), "No failures, 1 warning to review");
-        assert!(
-            render_markdown(&w, None).contains("⚠️ Protonaut: No failures, 1 warning to review")
-        );
-        assert!(render_html(&w).contains("class=\"v warn\""));
-        assert_eq!(headline(&sample(Status::Fail)), "Failures found");
+        assert!(render_markdown(&w, None).contains("Protonaut: No failures, 1 warning to review"));
+        assert!(render_html(&w).contains("head s-warning"));
+        assert_eq!(headline(&sample(Status::Fail)), "1 check failed");
     }
 
     #[test]
@@ -536,7 +450,7 @@ mod tests {
         );
         assert!(
             !render_markdown(&sample(Status::Pass), Some("javascript:alert(1)"))
-                .contains("workflow artifacts")
+                .contains("artifacts of this run")
         );
         assert!(
             render_markdown(

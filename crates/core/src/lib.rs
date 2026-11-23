@@ -3,12 +3,15 @@
 //! execution and no network access.
 
 pub mod config;
+mod html;
 pub mod inspect;
+mod markdown;
 pub mod model;
 pub mod observe;
 pub mod report;
 pub mod runtime_checks;
 pub mod static_checks;
+pub mod terminal;
 
 /// JSON Schema (draft 2020-12) for `report.json`.
 pub fn report_schema() -> serde_json::Value {

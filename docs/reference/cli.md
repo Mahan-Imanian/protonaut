@@ -12,7 +12,7 @@ Logs go to stderr; command output (summaries, `--json`) goes to stdout.
 | `inspect [BUILD] --exe EXE` | Static checks only; never runs the build |
 | `test [BUILD] --exe EXE` | Static and runtime checks under each runtime |
 | `proton list` / `proton install ID [--archive FILE]` | Pinned runtimes: list, download and verify |
-| `report REPORT.json --format markdown\|html\|junit\|json` | Re-renders a report after validating it |
+| `report REPORT.json --format markdown\|summary\|html\|junit\|json` | Re-renders a report after validating it. `markdown` is the PR comment, `summary` the GitHub Actions job summary |
 | `diagnose [--json]` | Checks the machine and prints how to fix what is missing |
 | `setup [--print]` | Installs the Xorg dummy config in `/etc/X11` (root) |
 | `schema [--write]` | Prints or writes the JSON Schemas |
