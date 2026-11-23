@@ -63,9 +63,9 @@ Protonaut narrows what reaches a person. It does not replace the review or a dev
 
 ## What it catches
 
-<img src="docs/assets/pr-comment.png" alt="A pull request comment from Protonaut listing a failed crash check on a real test build" width="860">
+<img src="docs/assets/pr-comment.png" alt="A pull request comment from Protonaut: two failed crash checks with the Wine log line, three checks not tested because the game exited before the first frame, and a command to reproduce the run" width="676">
 
-<sub>From the live [demo pull request](https://github.com/Mahan-Imanian/protonaut-demo/pull/1). The build is one of the project's test programs, not a real game.</sub>
+<sub>The comment for this project's crashing test build, rendered from a real CI run. The build is one of the project's test programs, not a real game. The [demo pull request](https://github.com/Mahan-Imanian/protonaut-demo/pull/1) shows comments live.</sub>
 
 | | Examples |
 |---|---|

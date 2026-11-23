@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- **New HTML report.** Problems come first with their evidence, filters and an "Expand all" switch work without JavaScript, a runs table appears when more than one runtime ran, and every check has a permalink and a link to its catalogue entry. Light and dark themes, a print stylesheet, and no network requests.
+- **New PR comment and job summary.** The comment shows failures, warnings and untested checks in one table with a next step and a command to reproduce the run. The job summary has its own fuller layout through the new `protonaut report --format summary`.
+- **New terminal summary.** Problems first with their evidence and log lines, one line for passes, a next step and a count line. Lines wrap at 100 columns, `UNKNOWN` and `NOT_TESTED` are no longer dimmed, and colour is off with `NO_COLOR`, `TERM=dumb` or when output is not a terminal. In GitHub Actions, logs no longer repeat timestamps or colour codes.
+- Check summaries now say "1 crash signature" and "the known test image", and the stability check says when the observation window ended.
+- `docs/reference/checks.md` has an anchor for every check id.
+
 ## [0.2.2] - 2026-11-05
 
 ### Changed
