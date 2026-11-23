@@ -23,6 +23,7 @@
 {"@type":"Question","name":"Is this Valve's Proton?","acceptedAnswer":{"@type":"Answer","text":"No. Protonaut uses GE-Proton, a community build, because Valve's builds need a Steam login. A game can behave differently under Valve's Proton."}}
 ]}
 </script>
+<script>document.documentElement.className="js"</script>
 <style>
 @font-face{font-family:"Saira Condensed";font-weight:800;font-display:swap;src:url(assets/fonts/saira-condensed-latin-800-normal.woff2)}
 @font-face{font-family:"Saira Condensed";font-weight:600;font-display:swap;src:url(assets/fonts/saira-condensed-latin-600-normal.woff2)}
@@ -51,7 +52,7 @@ h1,h2,h3{font-family:"Saira Condensed",sans-serif;line-height:1.02;margin:0}
 .board{border:1px solid var(--line);background:var(--panel)}
 .bar{display:flex;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:13px;color:var(--mute)}
 .rows{padding:12px 16px;min-height:262px;font-size:14px}
-.row{display:grid;grid-template-columns:50px 1fr;gap:10px;padding:5px 0;opacity:0;transform:translateX(-14px);animation:in .35s forwards}
+.row{display:grid;grid-template-columns:104px 1fr;gap:10px;padding:5px 0;opacity:0;transform:translateX(-14px);animation:in .35s forwards}
 @keyframes in{to{opacity:1;transform:none}}
 .s-pass{color:var(--go)}.s-fail{color:var(--nogo)}.s-nt{color:var(--mute)}
 .call{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding:14px 16px;font:800 34px/1 "Saira Condensed";letter-spacing:.05em;min-height:66px;transition:background .3s,color .3s}
@@ -77,6 +78,7 @@ th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line)}
 th{font:600 20px "Saira Condensed"}
 .y{color:var(--go)}.n{color:var(--nogo)}
 .scroll{overflow-x:auto}
+figure{margin:0 0 28px}figure img{width:100%;height:auto;display:block;border:1px solid var(--line)}figcaption{color:var(--mute);font-size:14px;margin-top:10px}
 details{border-bottom:1px solid var(--line);padding:16px 0}
 summary{cursor:pointer;font:600 24px/1.2 "Saira Condensed"}
 summary:hover{color:var(--orange)}
@@ -84,7 +86,7 @@ details p{color:var(--mute);margin:10px 0 0}
 a{color:var(--orange)}
 .limits{color:var(--mute);padding-left:20px}.limits li{margin:8px 0}
 footer{padding:34px 0;border-top:1px solid var(--line);color:var(--mute);font-size:13px}
-.r{opacity:0;transform:translateY(22px);transition:opacity .6s,transform .6s}.r.on{opacity:1;transform:none}
+.js .r{opacity:0;transform:translateY(22px);transition:opacity .6s,transform .6s}.js .r.on{opacity:1;transform:none}
 section>p,.limits,details p{max-width:76ch}
 ol.t li{grid-template-columns:48px minmax(0,72ch)}
 .copy pre{padding-right:96px}
@@ -110,13 +112,18 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var
 <a class="cta" href="#start">Add it to your CI &raquo;</a><a class="cta2" href="https://github.com/Mahan-Imanian/protonaut">View on GitHub</a>
 </div>
 <div class="board" aria-label="Example results from the crash test build">
-<div class="bar"><span>protonaut test dist/Windows</span><span>crash fixture, example</span></div>
+<div class="bar"><span>protonaut test dist/Windows</span><span>crash test build</span></div>
 <div class="rows" id="rows"></div>
 <div class="call" id="call"><span>RUNNING</span></div>
 </div>
 </header>
 
-<section class="r"><h2>A real run</h2><img src="assets/demo.gif" alt="A terminal running protonaut test on a test build that crashes under Proton, ending with two failures" style="width:100%;height:auto;display:block;border:1px solid var(--line)"><p style="color:var(--mute)">Recorded from a real CI run on one of the test builds. The <a href="https://github.com/Mahan-Imanian/protonaut-demo/pull/1">demo pull request</a> shows the same crash going red, with the report posted as a comment.</p></section>
+<section class="r"><h2>A real run</h2><img src="assets/demo.gif" width="1060" height="948" alt="A terminal running protonaut test on a test build that crashes under Proton. It ends with two failures and the Wine crash line, the checks that could not be tested, a next step and a command to reproduce the run" style="width:100%;max-width:820px;height:auto;display:block;border:1px solid var(--line)"><p style="color:var(--mute)">Recorded in a GitHub Actions run of one of the test builds with Protonaut 0.3.0, sped up while the game runs. The <a href="https://github.com/Mahan-Imanian/protonaut-demo/pull/1">demo pull request</a> shows the same crash going red.</p></section>
+
+<section class="r"><h2>What lands on the pull request</h2>
+<figure><img src="assets/pr-comment.png" width="1440" height="848" loading="lazy" alt="Protonaut's pull request comment in GitHub's light and dark themes: two failed crash checks with the Wine log line, three checks not tested because the game exited before the first frame, and a command to reproduce the run"><figcaption>The comment, posted or updated once per pull request. The job summary has a fuller version.</figcaption></figure>
+<figure><img src="assets/report.png" width="1280" height="1296" loading="lazy" alt="Protonaut's HTML report for the crashing test build: 2 checks failed, the Wine crash line, a command to reproduce the run, and the checks that could not be tested"><figcaption>The HTML report in the run's artifacts: problems first with their evidence, filters that work without JavaScript, light and dark themes. Both are from a real CI run of the crashing test build.</figcaption></figure>
+</section>
 
 <section id="start" class="r"><h2>One step in your workflow</h2>
 <div class="two">
@@ -144,7 +151,7 @@ protonaut test dist/Windows --exe MyGame.exe --install</pre><p style="color:var(
 <li>Your build runs under a pinned, checksum-verified GE-Proton release with Mesa's software Vulkan driver on a headless display at 1280x800.</li>
 <li>A control program that draws a known colour runs first. If its frame can't be captured, screenshot checks report NOT_TESTED, not a false black screen.</li>
 <li>Your game runs as an unprivileged user with no network and no CI token. Protonaut records windows, screenshots and the Wine log, then stops every process.</li>
-<li>Rules turn the evidence into report.json, an HTML report, JUnit XML and a PR comment.</li>
+<li>Rules turn the evidence into report.json, an HTML report, JUnit XML, a job summary and a PR comment.</li>
 </ol></section>
 
 <section class="r"><h2>Where it fits</h2><div class="scroll" tabindex="0" role="region" aria-label="Comparison table"><table>
@@ -173,11 +180,11 @@ protonaut test dist/Windows --exe MyGame.exe --install</pre><p style="color:var(
 <footer>Protonaut is an independent community project, not affiliated with or endorsed by Valve. Proton and Steam Deck are trademarks of Valve Corporation. Licensed under Apache-2.0.</footer>
 </div>
 <script>
-var checks=[["PASS","PN-PE-003 Imported DLLs are available","pass"],["PASS","PN-RUN-001 Game process starts under Proton","pass"],["FAIL","PN-RUN-002 Crashed after 4.1 s","fail"],["FAIL","PN-RUN-003 1 crash signature in the Wine log","fail"],["N/T","PN-HW-001 Frame rate needs real hardware","nt"]];
+var checks=[["PASS","PN-PE-003 Imported DLLs are available","pass"],["PASS","PN-RUN-001 Game process starts under Proton","pass"],["FAIL","PN-RUN-002 Crashed after 1.8 s","fail"],["FAIL","PN-RUN-003 1 crash signature in the Wine log","fail"],["NOT_TESTED","PN-DISP-002 No screenshot was taken","nt"]];
 var rows=document.getElementById("rows"),call=document.getElementById("call");
 function run(){rows.innerHTML="";call.className="call";call.innerHTML="<span>RUNNING</span><small>checks in progress</small>";
 checks.forEach(function(c,i){setTimeout(function(){var d=document.createElement("div");d.className="row";d.innerHTML='<b class="s-'+c[2]+'">'+c[0]+"</b><span>"+c[1]+"</span>";rows.appendChild(d)},500+i*750)});
-setTimeout(function(){call.className="call nogo";call.innerHTML="<span>FAILED</span><small>PR goes red</small>"},500+checks.length*750);
+setTimeout(function(){call.className="call nogo";call.innerHTML="<span>2 CHECKS FAILED</span><small>PR goes red</small>"},500+checks.length*750);
 setTimeout(run,500+checks.length*750+4200)}
 run();
 document.querySelectorAll(".copy button").forEach(function(b){b.onclick=function(){navigator.clipboard.writeText(document.getElementById(b.dataset.c).textContent);b.textContent="Copied";setTimeout(function(){b.textContent="Copy"},1400)}});
