@@ -17,28 +17,28 @@ that can be wrong. `none`: nothing was measured.
 
 | Id | Checks | FAIL when | Other outcomes |
 |---|---|---|---|
-| PN-PE-001 | The executable is a Windows PE file | Not a PE file, or malformed | |
-| PN-PE-002 | Architecture | ARM64 or unknown machine type | x86-64 and 32-bit x86 pass (32-bit runs through WoW64) |
-| PN-PE-003 | Every imported DLL is shipped next to the executable or provided by the runtime | An import is in neither place | `UNKNOWN` when no runtime is installed to compare with. API sets (`api-ms-win-*`) are skipped. Delay-loaded DLLs are not checked |
-| PN-STEAM-001 | Steam Input API is imported by name | never | `PASS` when a `SteamInput` flat-API function is imported; `UNKNOWN` otherwise, because C++ interface calls are invisible to import tables |
-| PN-STEAM-002 | Steamworks on-screen keyboard API is imported | never | As above, for `ShowGamepadTextInput` / `ShowFloatingGamepadTextInput` |
-| PN-FS-001 | No two paths differ only by letter case | Such a pair exists (only one is reachable on Windows and under Wine) | |
-| PN-AC-001 | Anti-cheat files | never | `WARNING` when Easy Anti-Cheat, BattlEye, nProtect, XIGNCODE3, PunkBuster, Vanguard, mhyprot or ACE files are present. Finding them says nothing about whether they work under Proton |
-| PN-LAUNCH-001 | Launcher (heuristic) | never | `WARNING` when the executable or another `.exe` is named like a launcher |
-| PN-MEDIA-001 | Video formats (heuristic) | never | `WARNING` for formats usually decoded through Media Foundation or DirectShow (`.wmv`, `.asf`, `.mp4`, `.m4v`, `.mov`, `.avi`, `.mkv`) |
+| <a id="pn-pe-001"></a>PN-PE-001 | The executable is a Windows PE file | Not a PE file, or malformed | |
+| <a id="pn-pe-002"></a>PN-PE-002 | Architecture | ARM64 or unknown machine type | x86-64 and 32-bit x86 pass (32-bit runs through WoW64) |
+| <a id="pn-pe-003"></a>PN-PE-003 | Every imported DLL is shipped next to the executable or provided by the runtime | An import is in neither place | `UNKNOWN` when no runtime is installed to compare with. API sets (`api-ms-win-*`) are skipped. Delay-loaded DLLs are not checked |
+| <a id="pn-steam-001"></a>PN-STEAM-001 | Steam Input API is imported by name | never | `PASS` when a `SteamInput` flat-API function is imported; `UNKNOWN` otherwise, because C++ interface calls are invisible to import tables |
+| <a id="pn-steam-002"></a>PN-STEAM-002 | Steamworks on-screen keyboard API is imported | never | As above, for `ShowGamepadTextInput` / `ShowFloatingGamepadTextInput` |
+| <a id="pn-fs-001"></a>PN-FS-001 | No two paths differ only by letter case | Such a pair exists (only one is reachable on Windows and under Wine) | |
+| <a id="pn-ac-001"></a>PN-AC-001 | Anti-cheat files | never | `WARNING` when Easy Anti-Cheat, BattlEye, nProtect, XIGNCODE3, PunkBuster, Vanguard, mhyprot or ACE files are present. Finding them says nothing about whether they work under Proton |
+| <a id="pn-launch-001"></a>PN-LAUNCH-001 | Launcher (heuristic) | never | `WARNING` when the executable or another `.exe` is named like a launcher |
+| <a id="pn-media-001"></a>PN-MEDIA-001 | Video formats (heuristic) | never | `WARNING` for formats usually decoded through Media Foundation or DirectShow (`.wmv`, `.asf`, `.mp4`, `.m4v`, `.mov`, `.avi`, `.mkv`) |
 
 ## Runtime checks (one result per runtime)
 
 | Id | Checks | FAIL when | Other outcomes |
 |---|---|---|---|
-| PN-RUN-001 | The process starts | The runtime could not start it, or Wine's loader logged a missing DLL | |
-| PN-RUN-002 | It keeps running for `observe_secs` | Nonzero exit or crash | `WARNING` on exit code 0 before the window ends |
-| PN-RUN-003 | No crash signatures in the Wine log | An unhandled exception was logged | |
-| PN-DISP-001 | A window appears | None appeared during the window | |
-| PN-DISP-002 | Visible content (heuristic) | never | `WARNING` when every frame is black or one flat colour |
-| PN-DISP-003 | Content fills the screen | never | `WARNING` (observed) when the game window is smaller than the display, since gamescope would scale it; otherwise `WARNING` (heuristic) on black bars over 5% of the width or height; `UNKNOWN` without content |
-| PN-DISP-004 | No extra small window (heuristic) | never | `WARNING` when a window smaller than half the screen appears, for example an error or "unsupported GPU" dialog |
-| PN-DISP-005 | No error message on screen (heuristic) | never | `WARNING` when OCR (Tesseract) reads error language on the representative frame ("error", "fatal", "missing", "not found", "unsupported", …), quoting the lines; `NOT_TESTED` when capture is not verified or Tesseract is not installed |
+| <a id="pn-run-001"></a>PN-RUN-001 | The process starts | The runtime could not start it, or Wine's loader logged a missing DLL | |
+| <a id="pn-run-002"></a>PN-RUN-002 | It keeps running for `observe_secs` | Nonzero exit or crash | `WARNING` on exit code 0 before the window ends |
+| <a id="pn-run-003"></a>PN-RUN-003 | No crash signatures in the Wine log | An unhandled exception was logged | |
+| <a id="pn-disp-001"></a>PN-DISP-001 | A window appears | None appeared during the window | |
+| <a id="pn-disp-002"></a>PN-DISP-002 | Visible content (heuristic) | never | `WARNING` when every frame is black or one flat colour |
+| <a id="pn-disp-003"></a>PN-DISP-003 | Content fills the screen | never | `WARNING` (observed) when the game window is smaller than the display, since gamescope would scale it; otherwise `WARNING` (heuristic) on black bars over 5% of the width or height; `UNKNOWN` without content |
+| <a id="pn-disp-004"></a>PN-DISP-004 | No extra small window (heuristic) | never | `WARNING` when a window smaller than half the screen appears, for example an error or "unsupported GPU" dialog |
+| <a id="pn-disp-005"></a>PN-DISP-005 | No error message on screen (heuristic) | never | `WARNING` when OCR (Tesseract) reads error language on the representative frame ("error", "fatal", "missing", "not found", "unsupported", …), quoting the lines; `NOT_TESTED` when capture is not verified or Tesseract is not installed |
 
 `PN-DISP-002`, `PN-DISP-003` and `PN-DISP-005` read screenshots. Before the game runs, a
 control program that draws a known colour runs under the same runtime and
@@ -50,6 +50,6 @@ that runtime, never `WARNING` or `PASS`. See
 
 | Id | Why not |
 |---|---|
-| PN-HW-001 | Frame rate needs real Deck or Steam Machine hardware; rendering here is CPU software Vulkan |
-| PN-HW-002 | Controller-only play needs scripted input, not implemented |
-| PN-HW-003 | Text size measurement (OCR) is not implemented |
+| <a id="pn-hw-001"></a>PN-HW-001 | Frame rate needs real Deck or Steam Machine hardware; rendering here is CPU software Vulkan |
+| <a id="pn-hw-002"></a>PN-HW-002 | Controller-only play needs scripted input, not implemented |
+| <a id="pn-hw-003"></a>PN-HW-003 | Text size measurement (OCR) is not implemented |
