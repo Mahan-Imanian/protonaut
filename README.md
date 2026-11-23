@@ -20,7 +20,9 @@ Protonaut runs your build under pinned GE-Proton on a headless Linux display in 
 [All checks](docs/reference/checks.md) ·
 [Changelog](CHANGELOG.md)
 
-<img src="docs/assets/demo.gif" alt="A terminal running protonaut test on a build that crashes under Proton. The run ends with two failures." width="860">
+<img src="docs/assets/demo.gif" alt="A terminal running protonaut test on a build that crashes under Proton. It ends with two failures and the Wine crash line, the checks that could not be tested, a next step and a command to reproduce the run." width="860">
+
+<sub>Recorded in a GitHub Actions run with Protonaut 0.3.0, sped up while the game runs.</sub>
 
 </div>
 
@@ -63,9 +65,9 @@ Protonaut narrows what reaches a person. It does not replace the review or a dev
 
 ## What it catches
 
-<img src="docs/assets/pr-comment.png" alt="A pull request comment from Protonaut: two failed crash checks with the Wine log line, three checks not tested because the game exited before the first frame, and a command to reproduce the run" width="676">
+<img src="docs/assets/pr-comment.png" alt="Protonaut's pull request comment in GitHub's light and dark themes: two failed crash checks with the Wine log line, three checks not tested because the game exited before the first frame, and a command to reproduce the run" width="860">
 
-<sub>The comment for this project's crashing test build, rendered from a real CI run. The build is one of the project's test programs, not a real game. The [demo pull request](https://github.com/Mahan-Imanian/protonaut-demo/pull/1) shows comments live.</sub>
+<sub>The 0.3.0 comment for this project's crashing test build, from a real CI run, in GitHub's light and dark themes. The build is one of the project's test programs, not a real game. The [demo pull request](https://github.com/Mahan-Imanian/protonaut-demo/pull/1) shows comments live.</sub>
 
 | | Examples |
 |---|---|
@@ -88,7 +90,7 @@ Besides synthetic fixtures, CI runs open-source games through the action:
 
 Results and screenshots are in [real-games.md](docs/compatibility/real-games.md). The testing also found a useful failure: OpenTTD without its graphics set keeps running while it shows a fatal error inside its own window. `PN-DISP-005` now reads the screen with OCR and reports text like that as a warning.
 
-![Protonaut's HTML report showing a letterboxed frame flagged as a warning, with the captured screenshot](docs/images/report.png)
+![Protonaut's HTML report for the crashing test build: 2 checks failed, the Wine crash line, a command to reproduce the run, and the checks that could not be tested](docs/images/report.png)
 
 ## How it works
 
