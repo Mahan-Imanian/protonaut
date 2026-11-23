@@ -95,7 +95,7 @@ Results and screenshots are in [real-games.md](docs/compatibility/real-games.md)
 1. Your build runs under a pinned, checksum-verified [GE-Proton](https://github.com/GloriousEggroll/proton-ge-custom) release with Mesa's software Vulkan driver on a headless Xorg display at 1280x800, 60 Hz.
 2. A control program that draws a known colour runs first under the same runtime. If its frame cannot be captured, screenshot checks report `NOT_TESTED` instead of a false black screen.
 3. Your game runs for `observe-secs` as an unprivileged user with no network and no CI token. Protonaut records windows, screenshots and the Wine log, then stops every process.
-4. Rules turn that evidence into `report.json` (versioned schema), an HTML report, JUnit XML and a PR comment.
+4. Rules turn that evidence into `report.json` (versioned schema), an HTML report, JUnit XML, a job summary and a PR comment.
 
 More in [docs/architecture.md](docs/architecture.md).
 
@@ -124,7 +124,7 @@ On your own machine the game runs as your user, so only run builds you trust.
 - OCR can miss stylised or very small text, so a clean `PN-DISP-005` is not proof that no error appeared.
 - x86-64 Linux hosts only.
 
-Version 0.2 is **experimental**. The CLI, report schema and action inputs may change before 1.0, and the [changelog](CHANGELOG.md) lists every change.
+Version 0.3 is **experimental**. The CLI, report schema and action inputs may change before 1.0, and the [changelog](CHANGELOG.md) lists every change.
 
 ## Roadmap
 
