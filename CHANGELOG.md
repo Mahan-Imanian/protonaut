@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-23
+
 ### Changed
 
 - **New HTML report.** Problems come first with their evidence, filters and an "Expand all" switch work without JavaScript, a runs table appears when more than one runtime ran, and every check has a permalink and a link to its catalogue entry. Light and dark themes, a print stylesheet, and no network requests.
@@ -83,7 +85,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - GitHub Action (`uses: Mahan-Imanian/steamos-preflight@<ref>`) that runs the build as an unprivileged user with no network and no CI token, uploads results and writes a job summary (`fail-job: "false"` keeps its outputs available), plus a `comment` action that posts or updates one PR comment from `report.json`.
 - Reproducible Windows test fixtures and an end-to-end suite covering crash, startup failure, missing asset, missing DLL, black screen, letterbox and dialog cases.
 
-[Unreleased]: https://github.com/Mahan-Imanian/protonaut/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/Mahan-Imanian/protonaut/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Mahan-Imanian/protonaut/releases/tag/v0.3.0
 [0.2.2]: https://github.com/Mahan-Imanian/protonaut/releases/tag/v0.2.2
 [0.2.1]: https://github.com/Mahan-Imanian/protonaut/releases/tag/v0.2.1
 [0.2.0]: https://github.com/Mahan-Imanian/protonaut/releases/tag/v0.2.0
