@@ -72,7 +72,10 @@ fn stability(obs: &RunObservation) -> CheckResult {
             title,
             Category::Runtime,
             Status::Pass,
-            format!("Still running after {} s.", obs.observe_secs),
+            format!(
+                "Still running when the {} s observation window ended.",
+                obs.observe_secs
+            ),
         ),
         RunOutcome::ExitedCleanly => observed(
             "PN-RUN-002",
@@ -129,10 +132,10 @@ fn log_errors(obs: &RunObservation) -> CheckResult {
             title,
             Category::Runtime,
             Status::Fail,
-            format!(
-                "{} crash signature(s) in the Wine log.",
-                obs.log.crashes.len()
-            ),
+            match obs.log.crashes.len() {
+                1 => "1 crash signature in the Wine log.".to_owned(),
+                n => format!("{n} crash signatures in the Wine log."),
+            },
         )
         .with_details(obs.log.crashes.clone())
     };
@@ -218,7 +221,7 @@ fn display_checks(obs: &RunObservation) -> Vec<CheckResult> {
         Some(true) => {}
         Some(false) => {
             return not_tested(
-                "Screen capture does not work with this runtime here: the control fixture's frame was not captured, so a black screenshot would prove nothing.",
+                "Screen capture does not work with this runtime here: the known test image was not captured, so a black screenshot would prove nothing.",
             );
         }
         None => return not_tested("The capture control run did not happen."),
