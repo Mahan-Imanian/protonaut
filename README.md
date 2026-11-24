@@ -16,6 +16,7 @@ Protonaut runs your build under pinned GE-Proton on a headless Linux display in 
 
 [**Website**](https://mahan-imanian.github.io/protonaut/) ·
 [Quick start](#quick-start) ·
+[Marketplace](https://github.com/marketplace/actions/protonaut-ci) ·
 [Recipes](docs/recipes.md) ·
 [All checks](docs/reference/checks.md) ·
 [Changelog](CHANGELOG.md)
@@ -30,7 +31,7 @@ Protonaut runs your build under pinned GE-Proton on a headless Linux display in 
 
 ## Quick start
 
-Add one step to a GitHub workflow on `ubuntu-24.04`, after your build:
+Add one step to a GitHub workflow on `ubuntu-24.04`, after your build. The action is listed on the [GitHub Marketplace](https://github.com/marketplace/actions/protonaut-ci) as Protonaut CI.
 
 ```yaml
 - uses: Mahan-Imanian/protonaut@v0
