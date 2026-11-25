@@ -14,7 +14,7 @@ workspace = true
 
 [dependencies]
 hex = "0.4.3"
-nix = { version = "0.31.3", features = ["signal", "process", "user", "fs"] }
+nix = { version = "0.32.0", features = ["signal", "process", "user", "fs"] }
 png = "0.18.1"
 protonaut-core = { version = "0.3.0", path = "../core" }
 serde = { version = "1.0.229", features = ["derive"] }
